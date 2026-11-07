@@ -51,3 +51,6 @@ def test_report_metrics_uses_fixed_periods_denominators_and_zero_fill(tmp_path: 
     assert len(metrics.daily_counts) == 30
     assert metrics.daily_counts[0] == (as_of_date - timedelta(days=29), 0)
     assert metrics.daily_counts[-1] == (as_of_date, 1)
+    assert len(metrics.monthly_counts) == 12
+    assert metrics.monthly_counts[-1] == (date(2026, 10, 1), 3)
+    assert metrics.monthly_counts[0] == (date(2025, 11, 1), 0)
