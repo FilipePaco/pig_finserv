@@ -9,7 +9,7 @@ uv run ruff check .
 uv run pytest
 ```
 
-The latest local verification completed with **66 passing tests**. The suite includes
+The latest local verification completed with **70 passing tests**. The suite includes
 `tests/test_e2e.py`, which uses only synthetic CFPB-shaped rows in a temporary
 directory and proves the CLI sequence below without retaining raw data:
 
