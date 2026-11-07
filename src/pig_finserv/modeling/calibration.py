@@ -3,13 +3,20 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Protocol
 
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.frozen import FrozenEstimator
 
-from pig_finserv.modeling.baseline import TfidfLogisticProductClassifier
 from pig_finserv.modeling.split import LabeledNarrative
 from pig_finserv.safety.text import MaskedTextPreprocessor
+
+
+class FittedLocalClassifier(Protocol):
+    """Minimal candidate contract accepted by the local calibrator."""
+
+    pipeline: object | None
+    preprocessor: MaskedTextPreprocessor
 
 
 @dataclass
@@ -20,7 +27,7 @@ class CalibratedProductClassifier:
     preprocessor: MaskedTextPreprocessor | None = None
 
     def fit(
-        self, *, base: TfidfLogisticProductClassifier, calibration: tuple[LabeledNarrative, ...]
+        self, *, base: FittedLocalClassifier, calibration: tuple[LabeledNarrative, ...]
     ) -> CalibratedProductClassifier:
         if base.pipeline is None:
             raise ValueError("base classifier must be fitted before calibration")
