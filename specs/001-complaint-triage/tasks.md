@@ -13,7 +13,8 @@
 
 - [x] Implement CFPB schema adapter, deterministic row validation, and deduplication.
 - [x] Implement snapshot manifest with acquisition, schema, quality, and checksum lineage.
-- [ ] Implement reviewed taxonomy/company mapping loaders and mapping-quality outputs.
+- [x] Implement reviewed taxonomy/company mapping loaders with distinct mapped, unmapped, and ambiguous states.
+- [ ] Add mapping-quality outputs to the curated snapshot workflow.
 - [ ] Persist curated data as Parquet and query it through read-only DuckDB metric templates.
 - [ ] Implement report-period, metric-denominator, zero-fill, and company-share tests.
 
