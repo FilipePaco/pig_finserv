@@ -85,3 +85,20 @@ def test_untrusted_prompt_injection_cannot_bypass_review_policy(tmp_path: Path) 
     )
 
     assert result.action is TriageAction.HUMAN_REVIEW_LOW_CONFIDENCE
+
+
+def test_oversized_narrative_creates_rejected_audit_event(tmp_path: Path) -> None:
+    service = _service(tmp_path, calibrated=True)
+    service._max_narrative_characters = 10  # noqa: SLF001 - boundary contract fixture
+
+    result = service.triage(TriageRequest(narrative="x" * 11))
+
+    assert result.action is TriageAction.REJECTED_INVALID_REQUEST
+    assert result.reason_code == "NARRATIVE_LIMIT_EXCEEDED"
+
+
+def test_invalid_envelope_creates_minimal_audit_event(tmp_path: Path) -> None:
+    result = TriageService.reject_invalid_request(AuditStore(tmp_path / "audit.sqlite"))
+
+    assert result.action is TriageAction.REJECTED_INVALID_REQUEST
+    assert result.audit_id.startswith("triage_")

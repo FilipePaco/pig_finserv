@@ -134,12 +134,17 @@ def triage(
 ) -> None:
     """Read a narrative from stdin and return a sanitized local triage decision."""
 
+    audit_store = AuditStore(audit_database)
+    try:
+        parsed_request_id = parse_request_id(request_id)
+    except ValueError:
+        _echo_triage_result(TriageService.reject_invalid_request(audit_store))
+        return
     try:
         artifact = load_model_artifact(
             directory=artifact_directory, taxonomy_version=taxonomy_version
         )
-        parsed_request_id = parse_request_id(request_id)
-    except (ModelArtifactError, ValueError) as exc:
+    except ModelArtifactError as exc:
         raise typer.BadParameter(str(exc)) from exc
     narrative = typer.get_text_stream("stdin").read()
     service = TriageService(
@@ -147,12 +152,16 @@ def triage(
         classifier=artifact.estimator,
         policy=artifact.threshold_policy,
         class_calibration_support=artifact.model_card.calibration_class_support,
-        audit_store=AuditStore(audit_database),
+        audit_store=audit_store,
         probabilities_calibrated=True,
         model_version=artifact.model_card.model_id,
         taxonomy_version=artifact.model_card.taxonomy_version,
     )
     result = service.triage(TriageRequest(narrative=narrative, request_id=parsed_request_id))
+    _echo_triage_result(result)
+
+
+def _echo_triage_result(result) -> None:
     typer.echo(
         json.dumps(
             {
