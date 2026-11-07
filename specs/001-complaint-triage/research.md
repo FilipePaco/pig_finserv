@@ -20,6 +20,7 @@
 - [CFPB API field reference](https://cfpb.github.io/api/ccdb/fields.html) — published field definitions.
 - [CFPB 2026 product and issue options](https://files.consumerfinance.gov/f/documents/cfpb_consumer-complaint-form-product-issue-options_2026.pdf) — effective date and current taxonomy context.
 - [CFPB enforcement actions](https://www.consumerfinance.gov/enforcement/actions/) — primary-source index for enforcement material.
+- [Jev decision API documentation](https://jev-ai.org/docs/) — typed choice/yes-no/score decisions, probability responses, and provider API contract.
 
 ## To verify during implementation (not assumptions)
 
@@ -27,7 +28,7 @@
 2. Exact bulk-file columns and types in the downloaded snapshot, including whether narrative availability and response fields align with the current field reference.
 3. The historical mappings required for the actually selected data window, including split/moved labels; mappings must be reviewed, not inferred by an LLM.
 4. License/terms and retention limits for any non-CFPB news/search provider.
-5. The exact provider named “JEV”, its API/SDK, data handling terms, and whether it is approved for masked complaint text.
+5. Provider privacy, retention, and commercial terms for Gemini, Jev, and any configured news-search adapter before any live call. Jev is an optional masked-text benchmark only.
 
 ## Evidence policy refined from this research
 

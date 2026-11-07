@@ -1,7 +1,7 @@
 # Feature Specification: Agentic consumer complaint triage and insights
 
 **Feature branch:** `001-complaint-triage`
-**Status:** Draft — refine before implementation
+**Status:** SDD v1 draft — implementation blocked pending review
 **Source:** Challenge brief in `../09-cfpb-complaint-triage-ml.md`
 
 ## Problem statement
@@ -73,7 +73,7 @@ As an ML/data owner, I can train an auditable product classifier and evaluate it
 - **FR-007:** Offer only canonical product values for reporting; compute metrics through read-only parameterized queries against the analytical store.
 - **FR-008:** Retrieve external context through a bounded news/CFPB-search tool, retain source provenance, and make a report without it when unavailable.
 - **FR-009:** Generate two required charts directly from query outputs and a PDF architecture diagram documenting agent, classifier, LLM, database, and news tool interactions.
-- **FR-010:** Keep all provider keys outside source control. Provider clients are interchangeable behind a small interface; Gemini is proposed as the initial LLM option pending confirmation of “JEV”.
+- **FR-010:** Keep all provider keys outside source control. Gemini is the initial constrained text-generation provider; Jev is an optional decision-model adapter behind a separate small interface.
 
 ## Non-functional requirements
 
@@ -105,15 +105,15 @@ As an ML/data owner, I can train an auditable product classifier and evaluate it
 - Building a general-purpose autonomous agent with arbitrary web, SQL, shell, or file-system access.
 - Exposure/customer-base normalization without a validated denominator dataset and methodology.
 
-## Open decisions for refinement
+## Resolved MVP decisions
 
-| ID | Decision needed | Proposed default | Why it matters |
-| --- | --- | --- | --- |
-| OD-1 | “JEV” provider identity/use | Treat as unconfigured until named; use Gemini only for constrained summarization/commentary. | Determines SDK, privacy terms, and tool interface. |
-| OD-2 | Delivery surface | CLI first; optional Streamlit UI if time permits. | Changes interface and test scope. |
-| OD-3 | Dataset scope | Reproducible stratified/time-bounded snapshot for development; final run on largest practical snapshot. | Affects runtime/storage and model representativeness. |
-| OD-4 | Product categories | Preserve full canonical product taxonomy; group rare classes only under documented minimum-support rule. | Defines routing destinations and macro-F1 meaning. |
-| OD-5 | Cost policy | Obtain business cost ratio; provisional policy chooses threshold minimizing validation expected cost and reports sensitivity at 1:5, 1:10, 1:20 review:misroute ratios. | Prevents an arbitrary auto-route threshold. |
+| ID | Decision | SDD v1 resolution |
+| --- | --- | --- |
+| D-1 | Jev use | Optional masked-text zero-shot benchmark or review-only second opinion. It is not the trained classifier or routing decision owner. |
+| D-2 | Delivery surface | CLI is required. Streamlit is deferred until the CLI path is complete and tested. |
+| D-3 | Dataset scope | Use a reproducible rolling 36 completed-month snapshot; use deterministic smaller fixtures for development tests. |
+| D-4 | Product categories | Preserve the full reviewed canonical taxonomy. Exclude unmapped/ambiguous targets; do not silently collapse classes for performance. |
+| D-5 | Cost policy | Select the threshold using calibration data at a 1:10 review:misroute ratio, report 1:5 and 1:20 sensitivity, and enforce selective-precision/support safety floors. |
 
 ## Assumptions and risks
 

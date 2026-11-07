@@ -1,6 +1,6 @@
 # Technical Design: Agentic consumer complaint triage and insights
 
-**Status:** Draft — contingent on `spec.md` open decisions
+**Status:** SDD v1 draft — implementation blocked pending review
 **Implementation:** Not started
 
 ## 1. Architecture at a glance
@@ -112,7 +112,7 @@ The masking implementation must document known limitations; it is risk reduction
 
 ### 5.3 Provider boundary
 
-Define `TextGenerationClient.generate_structured(task, payload)` with provider implementation selected by environment configuration. Initial permitted tasks: triage draft summary and report commentary. The interface logs provider/model/version, latency, token counts if available, and a payload fingerprint—not prompt/raw input. Gemini is proposed; “JEV” remains unconfigured until confirmed. Keys use `.env` locally plus `.env.example` containing names only; `.env` is ignored.
+Define `TextGenerationClient.generate_structured(task, payload)` with provider implementation selected by environment configuration. Initial permitted tasks: triage draft summary and report commentary. The interface logs provider/model/version, latency, token counts if available, and a payload fingerprint—not prompt/raw input. Gemini is the selected text-generation provider. Jev is a separate optional decision-model adapter for benchmark/review-only use. Keys use `.env` locally plus `.env.example` containing names only; `.env` is ignored.
 
 ## 6. Reporting design
 
@@ -137,7 +137,7 @@ The stored report is structured first: metadata, filters, deterministic metrics,
 | `report` CLI/API | canonical product, as-of date, optional period config | structured report ID, charts, Markdown/HTML report, source list, limitations |
 | `review` CLI/UI | audit ID, corrected label/action/reason | immutable correction event linked to original audit ID |
 
-Exact framework/API endpoints are deferred until OD-2. A CLI is sufficient for all required capabilities.
+Exact CLI-framework/API endpoint choices are implementation details deferred to task planning. The CLI is sufficient for all required capabilities.
 
 ## 8. Test strategy and quality gates
 
@@ -152,12 +152,12 @@ Exact framework/API endpoints are deferred until OD-2. A CLI is sufficient for a
 
 Completion gates: reproducible run instructions work from a clean clone; all automated tests pass; metrics/model card and sample report exist; architecture PDF is present; secret/data ignore rules are verified; and the requested public README documents choices/limitations.
 
-## 9. Implementation sequence after approval
+## 9. Implementation sequence after SDD v1 approval
 
-1. Resolve OD-1 through OD-5 and create a short `research.md` documenting CFPB API/schema and selected provider.
+1. Create an implementation task breakdown from the approved SDD documents.
 2. Scaffold project, dependency pinning, configuration/secrets handling, lint/test hooks, and data contract fixtures.
 3. Build ingestion, taxonomy mapping, DuckDB analytics, and deterministic report metrics/charts with tests.
 4. Build PII guard and append-only audit store with adversarial tests.
 5. Train/evaluate baseline and candidate; choose calibrated threshold/model; publish model card.
-6. Add constrained LLM summaries/commentary and bounded news retrieval with fallback behavior.
+6. Add constrained LLM summaries/commentary, optional Jev benchmark, and bounded news retrieval with fallback behavior.
 7. Produce a sample report, architecture diagram PDF, final README, and end-to-end reproducibility check.
