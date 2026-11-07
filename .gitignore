@@ -1,0 +1,18 @@
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+
+# Data, artifacts, and local audit exports
+data/
+artifacts/
+reports/generated/
+*.duckdb
+*.sqlite
+
+# Python tooling
+.venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
