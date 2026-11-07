@@ -28,7 +28,8 @@
 
 ## Milestone 4 — Model training and evaluation
 
-- [ ] Implement chronological partitioning and masked-text preprocessing.
+- [x] Implement chronological month-level partitioning without split leakage.
+- [ ] Implement shared masked-text preprocessing for training and inference.
 - [ ] Train/evaluate TF-IDF plus Logistic Regression baseline with calibration and model card.
 - [ ] Train/evaluate one improved local candidate on the same locked holdout.
 - [ ] Implement threshold selection, selective-risk metrics, and artifact compatibility checks.
