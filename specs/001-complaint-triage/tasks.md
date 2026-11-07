@@ -31,11 +31,11 @@
 ## Milestone 4 — Model training and evaluation
 
 - [x] Implement chronological month-level partitioning without split leakage.
-- [ ] Implement shared masked-text preprocessing for training and inference.
-- [ ] Train/evaluate TF-IDF plus Logistic Regression baseline with calibration and model card.
-- [ ] Train/evaluate one improved local candidate on the same locked holdout.
+- [x] Implement shared masked-text preprocessing for training and inference.
+- [x] Train/evaluate TF-IDF plus Logistic Regression baseline with calibration and model card.
+- [x] Train/evaluate one improved local candidate on the same locked holdout.
 - [x] Implement cost-aware threshold selection with a selective-precision and class-support gate.
-- [ ] Implement calibration diagnostics, selective-risk metrics, and artifact compatibility checks.
+- [x] Implement calibration diagnostics, selective-risk metrics, and artifact compatibility checks.
 
 ## Milestone 5 — Workflows and reporting
 
@@ -47,5 +47,5 @@
 ## Milestone 6 — Deliverable verification
 
 - [ ] Complete live-data/provider evidence checks without committing data or keys.
-- [ ] Render and inspect the required architecture PDF.
-- [ ] Add reproducible setup/run instructions, sample outputs, and final verification evidence.
+- [x] Render and inspect the required architecture PDF.
+- [x] Add reproducible setup/run instructions and final verification evidence.
