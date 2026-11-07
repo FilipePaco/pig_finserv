@@ -116,6 +116,17 @@ class AnalyticsStore:
             monthly_counts=tuple((value, int(monthly_lookup.get(value, 0))) for value in months),
         )
 
+    def coverage_dates(self) -> tuple[date, date]:
+        """Return the snapshot boundaries needed to validate an as-of date."""
+
+        with self._connection() as connection:
+            earliest, latest = connection.execute(
+                "SELECT min(date_received), max(date_received) FROM complaints"
+            ).fetchone()
+        if earliest is None or latest is None:
+            raise ValueError("curated snapshot has no complaint dates")
+        return earliest, latest
+
     def _connection(self) -> duckdb.DuckDBPyConnection:
         connection = duckdb.connect(":memory:")
         connection.execute(

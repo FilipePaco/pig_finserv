@@ -14,7 +14,6 @@ import typer
 
 from pig_finserv.analytics import AnalyticsStore
 from pig_finserv.audit import AuditStore
-from pig_finserv.charts import render_report_charts
 from pig_finserv.data.ingestion import ingest_csv
 from pig_finserv.data.mapping import (
     CompanyAliasMapper,
@@ -22,14 +21,14 @@ from pig_finserv.data.mapping import (
     load_company_aliases,
     load_product_mappings,
 )
-from pig_finserv.domain import TriageRequest, parse_request_id
+from pig_finserv.domain import ReportRequest, TriageRequest, parse_request_id
 from pig_finserv.modeling.artifact import ModelArtifactError, load_model_artifact
 from pig_finserv.modeling.dataset import load_masked_training_dataset
 from pig_finserv.modeling.split import split_by_month
 from pig_finserv.modeling.training import train_and_store
-from pig_finserv.reporting import render_markdown
 from pig_finserv.safety.pii import PiiMasker
 from pig_finserv.triage import TriageService
+from pig_finserv.workflows import ReportWorkflow
 
 app = typer.Typer(no_args_is_help=True, help="Pig FinServ complaint triage and insights.")
 
@@ -78,11 +77,11 @@ def report(parquet: Path, product: str, as_of_date: str, output_directory: Path)
         parsed_date = date.fromisoformat(as_of_date)
     except ValueError as exc:
         raise typer.BadParameter("as_of_date must use YYYY-MM-DD") from exc
-    metrics = AnalyticsStore(parquet).report_metrics(product=product, as_of_date=parsed_date)
-    output_directory.mkdir(parents=True, exist_ok=True)
-    (output_directory / "report.md").write_text(render_markdown(metrics))
-    render_report_charts(metrics, output_directory)
-    typer.echo(output_directory / "report.md")
+    result = ReportWorkflow(AnalyticsStore(parquet)).run(
+        request=ReportRequest(product=product, as_of_date=parsed_date),
+        output_directory=output_directory,
+    )
+    typer.echo(result.markdown_path)
 
 
 @app.command()
