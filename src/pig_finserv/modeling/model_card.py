@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 
@@ -21,6 +21,7 @@ class ModelCard:
     source_revision: str = "unknown"
     dependency_lock_reference: str = "uv.lock"
     created_at_utc: str | None = None
+    calibration_class_support: dict[str, int] = field(default_factory=dict)
 
     def write(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -31,6 +32,6 @@ class ModelCard:
         """Read a previously written, non-sensitive model card."""
 
         payload = json.loads(path.read_text())
-        for field in ("fit_months", "calibration_months", "test_months"):
-            payload[field] = tuple(tuple(month) for month in payload[field])
+        for month_field in ("fit_months", "calibration_months", "test_months"):
+            payload[month_field] = tuple(tuple(month) for month in payload[month_field])
         return cls(**payload)

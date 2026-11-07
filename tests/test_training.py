@@ -47,4 +47,5 @@ def test_training_compares_candidates_and_writes_compatible_artifact(tmp_path: P
     assert result.selected_model_id in {"product-tfidf-logistic-v1", "product-tfidf-linear-svm-v1"}
     assert result.class_calibration_support == {"Credit card": 6, "Mortgage": 6}
     assert artifact.model_card.source_revision == "test-revision"
+    assert artifact.model_card.calibration_class_support == {"Credit card": 6, "Mortgage": 6}
     assert set(artifact.evaluation) == {"baseline", "selected", "selected_model_id", "svm"}

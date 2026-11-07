@@ -81,6 +81,7 @@ def train_and_store(
         random_seed=42,
         source_revision=source_revision,
         created_at_utc=created_at_utc,
+        calibration_class_support=support,
     )
     write_model_artifact(
         directory=artifact_directory,
