@@ -654,6 +654,7 @@ dev = [
     { name = "ruff" },
 ]
 ml = [
+    { name = "joblib" },
     { name = "scikit-learn" },
 ]
 reporting = [
@@ -672,7 +673,10 @@ dev = [
     { name = "pytest", specifier = ">=8.3,<9" },
     { name = "ruff", specifier = ">=0.9,<1" },
 ]
-ml = [{ name = "scikit-learn", specifier = ">=1.6,<2" }]
+ml = [
+    { name = "joblib", specifier = ">=1.4,<2" },
+    { name = "scikit-learn", specifier = ">=1.6,<2" },
+]
 reporting = [{ name = "matplotlib", specifier = ">=3.10,<4" }]
 
 [[package]]

@@ -18,7 +18,19 @@ class ModelCard:
     calibration_method: str
     threshold_policy_version: str
     random_seed: int
+    source_revision: str = "unknown"
+    dependency_lock_reference: str = "uv.lock"
+    created_at_utc: str | None = None
 
     def write(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(asdict(self), indent=2, sort_keys=True) + "\n")
+
+    @classmethod
+    def read(cls, path: Path) -> ModelCard:
+        """Read a previously written, non-sensitive model card."""
+
+        payload = json.loads(path.read_text())
+        for field in ("fit_months", "calibration_months", "test_months"):
+            payload[field] = tuple(tuple(month) for month in payload[field])
+        return cls(**payload)
