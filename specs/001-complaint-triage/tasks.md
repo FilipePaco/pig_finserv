@@ -16,8 +16,8 @@
 - [x] Implement reviewed taxonomy/company mapping loaders with distinct mapped, unmapped, and ambiguous states.
 - [x] Add mapping-quality outputs to the curated snapshot workflow.
 - [x] Persist curated data as Parquet without narratives.
-- [ ] Query curated snapshots through read-only DuckDB metric templates.
-- [ ] Implement report-period, metric-denominator, zero-fill, and company-share tests.
+- [x] Query curated snapshots through read-only DuckDB metric templates.
+- [x] Implement report-period, metric-denominator, zero-fill, and company-volume tests.
 
 ## Milestone 3 — Safety and audit foundation
 
