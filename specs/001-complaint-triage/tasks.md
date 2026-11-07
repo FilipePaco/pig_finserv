@@ -41,8 +41,8 @@
 
 - [x] Implement explicit triage and report workflow state machines.
 - [x] Implement chart assets/tables and deterministic Markdown report rendering.
-- [ ] Implement bounded CFPB/news source retrieval and constrained Gemini commentary with fallback behavior.
-- [ ] Implement optional Jev benchmark/second-opinion adapter behind the documented safety boundary.
+- [x] Implement bounded CFPB/news source retrieval and constrained Gemini commentary with fallback behavior.
+- [x] Implement optional Jev benchmark/second-opinion adapter behind the documented safety boundary.
 
 ## Milestone 6 — Deliverable verification
 

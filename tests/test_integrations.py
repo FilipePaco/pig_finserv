@@ -2,7 +2,12 @@ from datetime import date
 
 import pytest
 
-from pig_finserv.integrations import EvidenceSource, validate_commentary, validate_evidence_sources
+from pig_finserv.integrations import (
+    EvidenceSource,
+    _parse_json_ld_articles,
+    validate_commentary,
+    validate_evidence_sources,
+)
 
 
 def _source(source_id: str, url: str) -> EvidenceSource:
@@ -42,3 +47,19 @@ def test_commentary_validator_rejects_unknown_citations_and_claims() -> None:
             metric_ids=frozenset({"metric.current_count"}),
             source_ids=frozenset({"source-1"}),
         )
+
+
+def test_cfpb_json_ld_parser_extracts_only_complete_articles() -> None:
+    document = """
+    <script type="application/ld+json">
+    {"@graph": [{"@type": "NewsArticle", "datePublished": "2026-10-01",
+    "url": "https://www.consumerfinance.gov/about-us/newsroom/example/",
+    "headline": "Example", "description": "Context",
+    "publisher": {"name": "CFPB"}}, {"@type": "Organization"}]}
+    </script>
+    """
+
+    articles = _parse_json_ld_articles(document)
+
+    assert articles[0].source_id == "cfpb-1"
+    assert articles[0].publication_date == date(2026, 10, 1)
