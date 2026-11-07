@@ -11,6 +11,7 @@ def render_markdown(
     *,
     evidence_sources: tuple[EvidenceSource, ...] = (),
     commentary: ReportCommentary | None = None,
+    timezone: str = "America/New_York",
 ) -> str:
     """Render a source-free deterministic report before optional commentary is added."""
 
@@ -23,7 +24,12 @@ def render_markdown(
         [
             f"# {metrics.product} complaint trend report",
             "",
-            f"As of date: {metrics.as_of_date.isoformat()}",
+            "## Metadata",
+            f"- Report ID: {metrics.report_id}",
+            f"- Snapshot ID: {metrics.snapshot_id}",
+            f"- Product: {metrics.product}",
+            f"- As-of date: {metrics.as_of_date.isoformat()}",
+            f"- Timezone: {timezone}",
             "",
             "## Volume",
             f"- Current 30-day complaints: {metrics.current_count}",

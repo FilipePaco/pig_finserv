@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
@@ -22,6 +23,14 @@ class ReportMetrics:
     top_companies: tuple[tuple[str, int], ...]
     daily_counts: tuple[tuple[date, int], ...]
     monthly_counts: tuple[tuple[date, int], ...]
+    snapshot_id: str = "unknown"
+
+    @property
+    def report_id(self) -> str:
+        """Return a stable identifier derived only from report lineage and filters."""
+
+        material = f"{self.snapshot_id}:{self.product}:{self.as_of_date.isoformat()}"
+        return f"report-{hashlib.sha256(material.encode()).hexdigest()[:16]}"
 
     @property
     def volume_change(self) -> float | None:
@@ -49,6 +58,11 @@ class AnalyticsStore:
         previous_end = current_start - timedelta(days=1)
         previous_start = previous_end - timedelta(days=29)
         with self._connection() as connection:
+            snapshot_ids = connection.execute(
+                "SELECT DISTINCT snapshot_id FROM complaints"
+            ).fetchall()
+            if len(snapshot_ids) != 1:
+                raise ValueError("curated Parquet must contain exactly one snapshot_id")
             current_count = self._count(connection, product, current_start, as_of_date)
             previous_count = self._count(connection, product, previous_start, previous_end)
             timely = connection.execute(
@@ -114,6 +128,7 @@ class AnalyticsStore:
             top_companies=tuple(top_companies),
             daily_counts=tuple((value, int(daily_lookup.get(value, 0))) for value in dates),
             monthly_counts=tuple((value, int(monthly_lookup.get(value, 0))) for value in months),
+            snapshot_id=str(snapshot_ids[0][0]),
         )
 
     def coverage_dates(self) -> tuple[date, date]:

@@ -71,7 +71,12 @@ class ReportWorkflow:
         output_directory.mkdir(parents=True, exist_ok=True)
         markdown_path = output_directory / "report.md"
         markdown_path.write_text(
-            render_markdown(metrics, evidence_sources=sources, commentary=commentary)
+            render_markdown(
+                metrics,
+                evidence_sources=sources,
+                commentary=commentary,
+                timezone=request.timezone,
+            )
         )
         chart_paths = render_report_charts(metrics, output_directory)
         return ReportWorkflowResult(
