@@ -170,6 +170,23 @@ def validate_model(artifact_directory: Path, taxonomy_version: str) -> None:
     typer.echo(artifact.model_card.model_id)
 
 
+@app.command("inspect-audit")
+def inspect_audit(audit_database: Path, audit_id: str) -> None:
+    """Print a sanitized audit event without input fingerprints or caller IDs."""
+
+    event = AuditStore(audit_database).sanitized_event(audit_id)
+    if event is None:
+        raise typer.BadParameter("audit event was not found")
+    typer.echo(json.dumps(event, sort_keys=True))
+
+
+@app.command("validate-audit")
+def validate_audit(audit_database: Path) -> None:
+    """Verify the local audit hash chain and print its event count."""
+
+    typer.echo(AuditStore(audit_database).verify_integrity())
+
+
 def _masker_from_environment() -> PiiMasker:
     salt = os.environ.get("PIG_FINSERV_FINGERPRINT_SALT")
     if not salt:

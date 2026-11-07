@@ -128,6 +128,32 @@ class AuditStore:
             previous_hash = stored_hash
         return len(rows)
 
+    def sanitized_event(self, audit_id: str) -> dict[str, object] | None:
+        """Return an operator-safe event view without fingerprints or raw text."""
+
+        with self._connection() as connection:
+            row = connection.execute(
+                """
+                SELECT audit_id, occurred_at, event_sequence, previous_event_hash,
+                       event_hash, payload_json
+                FROM audit_events WHERE audit_id = ?
+                """,
+                [audit_id],
+            ).fetchone()
+        if row is None:
+            return None
+        payload = json.loads(row[5])
+        payload.pop("input_fingerprint", None)
+        payload.pop("request_id", None)
+        return {
+            "audit_id": row[0],
+            "occurred_at": row[1],
+            "event_sequence": row[2],
+            "previous_event_hash": row[3],
+            "event_hash": row[4],
+            "payload": payload,
+        }
+
     def _initialize(self) -> None:
         with self._connection() as connection:
             connection.execute(

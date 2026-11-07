@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -60,3 +61,16 @@ def test_audit_store_rejects_free_text_metadata(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="request_id"):
         AuditStore(tmp_path / "audit.sqlite").append(payload)
+
+
+def test_sanitized_event_omits_fingerprint_and_caller_request_id(tmp_path: Path) -> None:
+    store = AuditStore(tmp_path / "audit.sqlite")
+    event = store.append(
+        replace(_payload(), request_id="81b900c1-b755-442c-a0b3-b0967009e412")
+    )
+
+    sanitized = store.sanitized_event(event.audit_id)
+
+    assert sanitized is not None
+    assert "input_fingerprint" not in sanitized["payload"]
+    assert "request_id" not in sanitized["payload"]
