@@ -12,7 +12,7 @@
 ## Milestone 2 — Data foundation and analytics
 
 - [x] Implement CFPB schema adapter, deterministic row validation, and deduplication.
-- [ ] Implement snapshot manifest with acquisition, schema, quality, and checksum lineage.
+- [x] Implement snapshot manifest with acquisition, schema, quality, and checksum lineage.
 - [ ] Implement reviewed taxonomy/company mapping loaders and mapping-quality outputs.
 - [ ] Persist curated data as Parquet and query it through read-only DuckDB metric templates.
 - [ ] Implement report-period, metric-denominator, zero-fill, and company-share tests.
