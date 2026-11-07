@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pig-finserv"
+version = "0.1.0"
+description = "Auditable consumer-complaint triage and trend reporting PoC."
+readme = "README.md"
+requires-python = ">=3.11,<3.15"
+license = { text = "MIT" }
+authors = [{ name = "Pig FinServ" }]
+dependencies = [
+  "duckdb>=1.1,<2",
+  "pydantic>=2.10,<3",
+  "typer>=0.15,<1",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3,<9",
+  "ruff>=0.9,<1",
+]
+ml = [
+  "scikit-learn>=1.6,<2",
+]
+reporting = [
+  "matplotlib>=3.10,<4",
+]
+
+[project.scripts]
+pig-finserv = "pig_finserv.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pig_finserv"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-q"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["pig_finserv"]
