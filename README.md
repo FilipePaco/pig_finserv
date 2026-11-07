@@ -66,6 +66,12 @@ printf '%s' 'My card was charged twice.' | uv run pig-finserv triage \
 
 uv run pig-finserv report \
   local/data/cfpb-example.parquet 'Credit card' 2026-10-31 local/reports/credit-card
+
+# Optional: retrieve bounded CFPB context and request Gemini commentary when local
+# Gemini credentials are configured. Provider failure still renders the report.
+uv run pig-finserv report \
+  local/data/cfpb-example.parquet 'Credit card' 2026-10-31 local/reports/credit-card \
+  --external-context
 ```
 
 Training requires at least 36 complete calendar months: the latest six are locked
