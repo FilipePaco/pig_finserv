@@ -32,7 +32,8 @@
 - [ ] Implement shared masked-text preprocessing for training and inference.
 - [ ] Train/evaluate TF-IDF plus Logistic Regression baseline with calibration and model card.
 - [ ] Train/evaluate one improved local candidate on the same locked holdout.
-- [ ] Implement threshold selection, selective-risk metrics, and artifact compatibility checks.
+- [x] Implement cost-aware threshold selection with a selective-precision and class-support gate.
+- [ ] Implement calibration diagnostics, selective-risk metrics, and artifact compatibility checks.
 
 ## Milestone 5 — Workflows and reporting
 
