@@ -21,7 +21,8 @@
 
 ## Milestone 3 — Safety and audit foundation
 
-- [ ] Implement local PII masking with typed placeholders and invariant tests.
+- [x] Implement local structured-PII masking with typed placeholders and invariant tests.
+- [ ] Add a local NLP entity detector for person/location candidates and document measured limitations.
 - [ ] Implement SQLite application-level append-only hash-chained audit events and integrity verification.
 - [ ] Implement safe triage failure paths, safe metadata validation, and adversarial fixtures.
 
