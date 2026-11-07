@@ -23,7 +23,7 @@
 
 ## 3. Text preparation
 
-Training consumes restricted narrative text only from the local training zone. The training pipeline may use locally normalized text but does not send it to any provider. Transformations must be fitted only on the fitting partition:
+Training consumes restricted narrative text only from the local training zone. Every narrative is passed through the local PII guard before feature generation; training and inference use the same masked, locally normalized representation. The pipeline does not send training text to any provider. Transformations must be fitted only on the fitting partition:
 
 - replace known CFPB redaction spans such as repeated `X` with a stable token;
 - normalize Unicode, whitespace, and repeated punctuation;
@@ -31,7 +31,7 @@ Training consumes restricted narrative text only from the local training zone. T
 - apply a maximum length chosen from observed percentile statistics, recording truncation rate;
 - retain raw restricted input only where the data-retention policy permits; artifact reports contain aggregate examples only after manual privacy review.
 
-PII masking for external calls is a separate safety control and does not automatically define the local model-preprocessing policy.
+The raw restricted training source is retained only according to the data-retention policy. It is not a model feature representation and is never emitted in model artifacts, evaluation outputs, or normal logs.
 
 ## 4. Chronological split protocol
 

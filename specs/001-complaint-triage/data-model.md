@@ -119,7 +119,7 @@ All report calculations use canonical labels and the selected product unless a d
 | Issue share | Issue count | All selected-product complaints in current period | Unknown issue remains in total but not named as a top issue. |
 | Company share | Company count | All selected-product complaints in current period | Unreviewed aliases may be marked; no exposure normalization. |
 
-The current period is the 30 most recent completed calendar days ending at the report as-of date. The previous period is the immediately preceding 30 calendar days. The monthly chart comprises 12 completed calendar months ending at the as-of month. All date arithmetic uses a documented project timezone, defaulting to `America/New_York` because the data source is US-focused; the report stores the timezone.
+The current period is the 30 completed calendar days ending at the report as-of date. The previous period is the immediately preceding 30 calendar days. The monthly chart comprises 12 completed calendar months ending at the as-of month. An as-of date may have zero complaints: it is valid when it is a completed date no later than the snapshot's latest completed date and the snapshot covers the required 12-month chart window. Dates after the snapshot's latest completed date or before its required historical coverage fail validation. All date arithmetic uses a documented project timezone, defaulting to `America/New_York` because the data source is US-focused; the report stores the timezone.
 
 ## 10. Data acceptance gates
 

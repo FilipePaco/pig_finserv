@@ -24,8 +24,8 @@ Tests must validate observable contracts, not implementation details. Fixtures a
 | Requirement | Minimum verification |
 | --- | --- |
 | FR-001 ingestion | Fixture ingestion creates manifest with correct row/rejection/deduplication counts. |
-| FR-002 taxonomy | Historical labels map only through reviewed mapping; unmapped labels are reported/excluded. |
-| FR-003 PII | Mock Gemini/Jev/audit payloads contain placeholders, never planted sensitive values. |
+| FR-002 taxonomy | Historical labels map only through reviewed mapping; `UNMAPPED` and `AMBIGUOUS` states are distinct, reported, and excluded. |
+| FR-003 PII | Mock model/Gemini/Jev/audit payloads contain placeholders, never planted sensitive values. |
 | FR-004 trained classifier | Chronological fit/calibration/test protocol and model card are created from a fixture. |
 | FR-005 calibrated threshold | Threshold is selected only from calibration data and respects review-only guardrails. |
 | FR-006 audit | Every triage branch writes safe event; audit failure blocks auto-route. |
@@ -64,6 +64,8 @@ Tests must validate observable contracts, not implementation details. Fixtures a
 | Artifact taxonomy mismatch | Application refuses model load and routes to review. |
 | Candidate beats accuracy but regresses macro-F1 | Selection decision records rejection unless justified by approved policy. |
 | Jev response claims high confidence | It cannot override local policy; benchmark output is separately identified. |
+| Caller-provided request/review metadata | Non-UUID request IDs and free-text reviewer reasons are rejected; no planted PII is persisted. |
+| Audit-chain verification | Inserted events verify sequence and previous-hash linkage; a modified fixture fails integrity validation. |
 
 ## 6. Privacy and adversarial test corpus
 

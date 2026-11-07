@@ -15,7 +15,7 @@ LangGraph defines two named state machines. Nodes receive and emit typed state; 
 ## 2. Triage graph contract
 
 ```text
-validate request
+validate non-sensitive envelope and create a minimal rejection event when malformed
   -> detect and mask PII locally
   -> load compatible model artifact
   -> predict and calibrate probabilities
@@ -29,12 +29,12 @@ validate request
 
 | Node | Reads | Writes | External access | Failure transition |
 | --- | --- | --- | --- | --- |
-| Validate request | Request schema | Validated state | None | `HUMAN_REVIEW_EMPTY_INPUT` or typed validation error. |
+| Validate request | Request schema | Validated state or minimal safe rejection event | None | Empty text becomes `HUMAN_REVIEW_EMPTY_INPUT`; malformed input becomes `REJECTED_INVALID_REQUEST`. |
 | PII guard | In-memory narrative | Masked narrative, entity-type counts, fingerprint | None | `HUMAN_REVIEW_GUARDRAIL_FAILURE`. |
-| Model inference | Local artifact, normalized local text | Prediction distribution | None | `HUMAN_REVIEW_SYSTEM_FAILURE`. |
+| Model inference | Local artifact, masked and normalized text | Prediction distribution | None | `HUMAN_REVIEW_SYSTEM_FAILURE`. |
 | Routing policy | Calibrated distribution, threshold policy | Action and rationale code | None | Review when ineligible. |
 | Summary generator | Masked narrative, prediction, safe action | Bounded draft summary | Gemini only | Summary omitted; previous action remains valid. |
-| Audit writer | Safe/minimized state | Immutable event | Local SQLite only | `HUMAN_REVIEW_SYSTEM_FAILURE` for any proposed auto-route. |
+| Audit writer | Safe/minimized state | Append-only, hash-chained event | Local SQLite only | `HUMAN_REVIEW_SYSTEM_FAILURE` for any proposed auto-route; transient correlation ID if no event can persist. |
 
 The Jev client, if enabled, is called after PII masking and before routing policy only in `benchmark` or `review_second_opinion` mode. It cannot change `AUTO_ROUTE` eligibility. Its result is stored as a separately identified optional signal.
 
@@ -100,7 +100,7 @@ validate canonical product and as-of date
 
 The PII guard runs locally before any external call or normal audit write. It combines high-precision patterns for email, phone, SSN-like numbers, payment/account-like identifiers, and dates of birth with NLP entity recognition for person/location candidates. Replacements use typed placeholders such as `[EMAIL_1]`, `[PHONE_1]`, `[ACCOUNT_ID_1]`, and `[PERSON_1]`.
 
-The guard returns only masked text, a salted SHA-256 input fingerprint, and entity counts/types to later nodes. The salt is loaded from local configuration and never emitted. The original narrative is held only in process memory for the permitted local model path and is discarded after the request.
+The guard returns only masked text, a salted SHA-256 input fingerprint, and entity counts/types to later nodes. The salt is loaded from local configuration and never emitted. The original narrative is discarded from request memory after masking and never reaches model inference, external clients, audit records, or normal logs.
 
 Known limitations must be documented: entity recognition can miss or over-mask names; no de-identification claim is absolute. A detector error, an unhandled encoding failure, or a masking invariant failure stops external use and routes to human review.
 

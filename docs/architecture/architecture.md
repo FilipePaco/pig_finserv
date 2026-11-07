@@ -22,7 +22,7 @@ The architecture prioritizes privacy, auditability, reproducibility, graceful de
 | Optional decision model | Jev as zero-shot benchmark/second opinion | A closed product taxonomy fits a typed choice model; it must be evaluated locally and never replace the trained model. |
 | Orchestration | Explicit LangGraph state machines | Makes states, tool permissions, failure paths, and audits inspectable. |
 | Analytics | Parquet snapshots queried with DuckDB | Fast local analytical SQL without operating a database server. |
-| Audit persistence | Local SQLite append-only event store | Supports traceable queries while keeping the PoC simple. |
+| Audit persistence | Local SQLite application-enforced, hash-chained event store | Provides tamper-evident integrity checks without claiming tamper-proof storage. |
 | Delivery surface | CLI required; Streamlit deferred | A CLI is sufficient, testable, and reproducible. A UI may be added after the required path is complete. |
 | External context | CFPB first-party sources plus a bounded configurable news-search adapter | Preserves source provenance and prevents free-form browsing. |
 
@@ -68,7 +68,7 @@ flowchart TB
     end
 
     subgraph Local["Pig FinServ PoC — local environment"]
-        App["Pig FinServ Application\nPython CLI; optional Streamlit UI\nTriage, reporting, and training workflows"]
+        App["Pig FinServ Application\nPython CLI; optional Streamlit UI\nLangGraph orchestration for triage, reporting, and training workflows"]
         Analytics["Analytics Store\nDuckDB over Parquet snapshots"]
         Audit["Audit Store\nSQLite append-only events"]
         Artifacts["Artifact Store\nTaxonomy, models, manifests, reports"]
@@ -100,19 +100,20 @@ The PoC intentionally remains one application. Internal services are components,
 ```mermaid
 flowchart LR
     Input[New complaint narrative]
+    Orchestrator[Triage Graph Orchestrator]
     Mask[Local PII detection and masking]
     Classifier[Local trained product classifier]
     Calibrator[Calibrated probabilities]
     Policy[Cost-based routing policy]
     Summary[Optional Gemini masked summary]
-    Audit[Append-only audit event]
+    Audit[Hash-chained audit event]
     Auto[Suggested auto-route]
     Review[Human review queue]
 
-    Input --> Mask
+    Input --> Orchestrator --> Mask
     Mask -->|Empty input or guardrail failure| Review
-    Mask --> Classifier --> Calibrator --> Policy
-    Policy -->|Approved confidence threshold| Auto
+    Mask -->|Masked and normalized text| Classifier --> Calibrator --> Policy
+    Policy -->|Meets all routing-policy gates| Auto
     Policy -->|Low confidence or unsupported class| Review
     Mask -->|Masked text only| Summary
     Auto --> Audit
@@ -127,6 +128,7 @@ The classifier makes the prediction; the routing policy makes the action. Genera
 ```mermaid
 flowchart LR
     Request[Canonical product and as-of date]
+    Orchestrator[Report Graph Orchestrator]
     Validate[Validate product and period]
     Query[Read-only parameterized DuckDB queries]
     Metrics[Deterministic metric tables]
@@ -136,7 +138,7 @@ flowchart LR
     Commentary[Gemini constrained commentary]
     Report[Structured report with limitations and citations]
 
-    Request --> Validate --> Query
+    Request --> Orchestrator --> Validate --> Query
     Query --> Metrics
     Query --> Charts
     Validate --> Retrieve --> Evidence

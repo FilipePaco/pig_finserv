@@ -38,7 +38,7 @@ The final PDF diagram will be derived from this approved architecture and verifi
 | Component | Responsibility | Trust boundary / failure behavior |
 | --- | --- | --- |
 | `ingest` | Fetch/download, validate schema, deduplicate, create Parquet snapshot and manifest. | No LLM. Reject invalid schema; preserve raw source externally/locally according to data policy. |
-| `taxonomy` | Version mappings from source product/issue labels to canonical labels. | Deterministic; ambiguous input becomes `UNMAPPED`, never guessed. |
+| `taxonomy` | Version mappings from source product/issue labels to canonical labels. | Deterministic; retain distinct `UNMAPPED` and `AMBIGUOUS` states, never guess. |
 | `pii_guard` | Local recognizer + conservative regexes for email/phone/account/card/SSN/date/name candidates; replace with typed tokens. | Fail closed: triage to review, no LLM/log text. |
 | `modeling` | Chronological split, vectorizer/model fitting, calibration, evaluation, artifact registry. | Fits every transform on training only. No provider dependency. |
 | `triage_service` | Calls guard → model → policy → optional masked summary → audit writer. | No auto-route on model/guard/audit failure. |
@@ -97,7 +97,7 @@ Proposed status values: `AUTO_ROUTE`, `HUMAN_REVIEW_LOW_CONFIDENCE`, `HUMAN_REVI
 
 1. Receive narrative in process memory.
 2. Detect entities using local tools/rules; replace values with tokens such as `[EMAIL]`, `[PHONE]`, `[ACCOUNT_ID]`, `[PERSON]`.
-3. Classifier may use the original/locally normalized text only if the data policy approves it; every external call and standard audit uses masked text/fingerprint.
+3. Normalize the masked text locally and use that same masked representation for classifier inference, optional external calls, and standard audit data. The original narrative is discarded from request memory after masking completes.
 4. Require an invariant test that no detected raw value appears in LLM payload, audit payload, exception message, or report.
 
 The masking implementation must document known limitations; it is risk reduction, not a claim of perfect de-identification.

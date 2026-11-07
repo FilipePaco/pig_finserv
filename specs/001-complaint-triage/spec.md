@@ -24,7 +24,7 @@ As an operations analyst, I submit a complaint narrative and receive a proposed 
 
 **Acceptance scenarios**
 
-1. Given valid narrative text, when the classifier confidence meets the approved threshold, then the system returns `AUTO_ROUTE`, model/taxonomy versions, predicted product, confidence, and a summary generated only from masked text.
+1. Given valid narrative text, when the prediction meets every approved routing-policy gate (calibrated threshold, cost eligibility, class-support rule, and healthy guard/audit dependencies), then the system returns `AUTO_ROUTE`, model/taxonomy versions, predicted product, confidence, and a summary generated only from masked text.
 2. Given a prediction below threshold, an unseen/unsupported label, empty text, or failed masking step, then the system returns `HUMAN_REVIEW`; it does not auto-route.
 3. Given text containing email, phone, account-like identifier, or a likely personal name, when any LLM or persisted audit record is produced, then the exposed text contains placeholders rather than the detected value.
 4. Given a narrative that asks the system to ignore instructions, disclose secrets, or call a tool, then it is classified as data, no instruction/tool behavior changes, and the audit action follows confidence policy.
@@ -35,7 +35,7 @@ As an ML/data owner, I can reconstruct why and when a routing action was suggest
 
 **Acceptance scenarios**
 
-1. Every request creates an immutable event containing event ID/time, salted input fingerprint, PII-mask status/counts, model/taxonomy version, scores, chosen action, threshold version, and outcome/reviewer correction when available.
+1. Every valid or safely rejected request creates an append-only, tamper-evident event containing event ID/time, salted input fingerprint when available, PII-mask status/counts, model/taxonomy version, scores, chosen action, threshold version, and outcome/reviewer correction when available. If audit storage is unavailable, automatic routing is blocked and a non-sensitive health signal records the persistence failure.
 2. An audit export excludes raw input, LLM credentials, and hidden prompt content.
 3. A model artifact can be traced to its data snapshot, schema/taxonomy mapping, split boundaries, hyperparameters, metrics, calibration method, and threshold decision.
 
@@ -69,7 +69,7 @@ As an ML/data owner, I can train an auditable product classifier and evaluate it
 - **FR-003:** Detect and mask PII locally before externally processed text or durable audit text; fail closed to review if masking fails.
 - **FR-004:** Train a product classifier and, if coverage/quality permits, a separate or hierarchical issue classifier. Product remains the required routing decision.
 - **FR-005:** Calibrate confidence on a temporally later validation partition and select threshold(s) by a documented review-versus-misroute cost policy.
-- **FR-006:** Write an append-only triage audit event for all attempts, including failures and human corrections.
+- **FR-006:** Write an append-only, hash-chained triage audit event for valid/safely rejected attempts and human corrections. Audit persistence failure blocks automatic routing and yields a safe system-failure response.
 - **FR-007:** Offer only canonical product values for reporting; compute metrics through read-only parameterized queries against the analytical store.
 - **FR-008:** Retrieve external context through a bounded news/CFPB-search tool, retain source provenance, and make a report without it when unavailable.
 - **FR-009:** Generate two required charts directly from query outputs and a PDF architecture diagram documenting agent, classifier, LLM, database, and news tool interactions.
@@ -87,7 +87,7 @@ As an ML/data owner, I can train an auditable product classifier and evaluate it
 
 | Measure | Proposed definition |
 | --- | --- |
-| Current period | 30 most recent **completed** local calendar days available in the selected snapshot, inclusive. |
+| Current period | 30 completed local calendar days ending at the requested as-of date, inclusive. The as-of date may have zero complaints. |
 | Previous period | The immediately preceding 30 calendar days. |
 | Volume change | `(current_count - previous_count) / previous_count`; show `N/A` when prior count is zero and show both counts. |
 | Timely response rate | `timely_response = Yes` / records with a known Yes/No timely response in current period. |
@@ -95,7 +95,7 @@ As an ML/data owner, I can train an auditable product classifier and evaluate it
 | Top issues | Top five canonical issues by current-period count; show share of all current-period selected-product complaints. |
 | Top companies | Top five canonicalized company names by current-period count and selected-product share; not customer-base normalized. |
 | Daily chart | Counts per received date over current 30-day period, including zero-count dates. |
-| Monthly chart | Counts per calendar month for 12 completed months ending with the snapshot's latest completed month, including zero-count months. |
+| Monthly chart | Counts per calendar month for 12 completed months ending with the as-of date's completed month, including zero-count months. |
 
 ## Out of scope for this PoC
 

@@ -37,7 +37,7 @@ The exact command framework is deferred; names and input/output behavior are fix
 }
 ```
 
-`narrative` must be non-empty after Unicode/whitespace normalization and no longer than the configured request limit. It is read from secure stdin or a local ignored file by default; it must not be provided as a shell argument, which could expose it to shell history/process listings.
+`request_id`, when supplied, must be an opaque UUID-like identifier and is otherwise discarded rather than persisted. `narrative` must be non-empty after Unicode/whitespace normalization and no longer than the configured request limit. It is read from secure stdin or a local ignored file by default; it must not be provided as a shell argument, which could expose it to shell history/process listings.
 
 ### Response
 
@@ -63,13 +63,13 @@ The exact command framework is deferred; names and input/output behavior are fix
 
 ## 4. Audit-event contract
 
-Audit events are append-only records. The application does not expose update/delete operations for original events.
+Audit events use application-enforced append semantics, not a claim of tamper-proof storage. The application exposes no update/delete operation for original events. Each successful insert has a monotonically increasing sequence number, prior-event hash, and canonical event hash; an integrity command verifies the chain. Direct filesystem/database access remains outside the PoC threat model and is not represented as impossible.
 
 | Field | Required | Notes |
 | --- | --- | --- |
 | `audit_id` | Yes | Generated immutable ID. |
 | `occurred_at` | Yes | UTC timestamp. |
-| `request_id` | No | Client correlation ID after validation/length limits. |
+| `request_id` | No | Opaque UUID-like client correlation ID only; otherwise discarded. |
 | `input_fingerprint` | Yes | Salted hash; never raw narrative. |
 | `masking_status` and `masked_entity_counts` | Yes | No entity values. |
 | `snapshot_id`, `model_version`, `taxonomy_version` | Conditional | Required when model inference runs. |
@@ -78,9 +78,10 @@ Audit events are append-only records. The application does not expose update/del
 | `provider_metadata` | No | Provider/model/version/latency only. |
 | `summary_status` | Yes | Available, unavailable, skipped, or invalid. |
 | `parent_audit_id` | No | Used by human correction events. |
-| `review_correction` | No | Structured reviewer result; no raw input. |
+| `event_sequence`, `previous_event_hash`, `event_hash` | Yes | Application-level tamper-evident chain metadata. |
+| `review_correction` | No | Canonical product/issue, outcome enum, and allowlisted reason code only; no free text. |
 
-Audit exports default to aggregate/sanitized form. Access to any masked narrative stored for a short review session is not in scope for the public PoC and must not be committed.
+Malformed requests create a minimal safe audit event with `REJECTED_INVALID_REQUEST`, no raw payload, and no caller-controlled metadata. A parsed empty narrative creates `HUMAN_REVIEW_EMPTY_INPUT`. If the audit store itself is unavailable, the application returns `HUMAN_REVIEW_SYSTEM_FAILURE` with a transient correlation ID and creates no auto-route; it emits only a non-sensitive operational health signal because an immutable event cannot be persisted. Audit exports default to aggregate/sanitized form. Access to any masked narrative stored for a short review session is not in scope for the public PoC and must not be committed.
 
 ## 5. Report request and structured result
 
@@ -94,7 +95,7 @@ Audit exports default to aggregate/sanitized form. Access to any masked narrativ
 }
 ```
 
-The product must resolve to exactly one canonical product. The as-of date must be present in the selected snapshot's completed-date coverage. The CLI rejects arbitrary filter text, raw SQL, and unrecognized timezone identifiers.
+The product must resolve to exactly one canonical product. The as-of date may have zero complaints; it is valid when it is a completed date no later than the snapshot's latest completed date and the snapshot contains the required 12-month historical window. The CLI rejects dates after the available snapshot, dates without sufficient historical coverage, arbitrary filter text, raw SQL, and unrecognized timezone identifiers.
 
 ### Required structured result
 
