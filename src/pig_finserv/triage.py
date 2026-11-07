@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import Protocol
 from uuid import uuid4
 
@@ -20,6 +21,14 @@ class TriageResult:
     confidence: float | None
     guardrail_status: MaskingStatus
     reason_code: str
+    workflow_state: TriageWorkflowState
+
+
+class TriageWorkflowState(StrEnum):
+    """Terminal states of the fixed local triage workflow."""
+
+    AUDITED = "AUDITED"
+    AUDIT_UNAVAILABLE = "AUDIT_UNAVAILABLE"
 
 
 class ProductClassifier(Protocol):
@@ -137,6 +146,7 @@ class TriageService:
                 confidence=None,
                 guardrail_status=masking_status,
                 reason_code="AUDIT_STORE_UNAVAILABLE",
+                workflow_state=TriageWorkflowState.AUDIT_UNAVAILABLE,
             )
         return TriageResult(
             audit_id=event.audit_id,
@@ -145,4 +155,5 @@ class TriageService:
             confidence=confidence,
             guardrail_status=masking_status,
             reason_code=reason_code,
+            workflow_state=TriageWorkflowState.AUDITED,
         )

@@ -23,10 +23,10 @@
 ## Milestone 3 — Safety and audit foundation
 
 - [x] Implement local structured-PII masking with typed placeholders and invariant tests.
-- [ ] Add a local NLP entity detector for person/location candidates and document measured limitations.
+- [x] Add a local NLP entity detector for person/location candidates and document measured limitations.
 - [x] Implement SQLite application-level append-only hash-chained audit events and integrity verification.
 - [x] Implement safe triage failure paths and masked-input audit integration.
-- [ ] Add safe metadata validation and adversarial prompt-injection fixtures.
+- [x] Add safe metadata validation and adversarial prompt-injection fixtures.
 
 ## Milestone 4 — Model training and evaluation
 
@@ -39,7 +39,7 @@
 
 ## Milestone 5 — Workflows and reporting
 
-- [ ] Implement explicit triage and report workflow state machines.
+- [x] Implement explicit triage and report workflow state machines.
 - [x] Implement chart assets/tables and deterministic Markdown report rendering.
 - [ ] Implement bounded CFPB/news source retrieval and constrained Gemini commentary with fallback behavior.
 - [ ] Implement optional Jev benchmark/second-opinion adapter behind the documented safety boundary.
