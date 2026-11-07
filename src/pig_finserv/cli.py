@@ -22,6 +22,7 @@ from pig_finserv.data.mapping import (
     load_product_mappings,
 )
 from pig_finserv.domain import ReportRequest, TriageRequest, parse_request_id
+from pig_finserv.integrations import CfpbNewsRetriever, GeminiCommentaryClient
 from pig_finserv.modeling.artifact import ModelArtifactError, load_model_artifact
 from pig_finserv.modeling.dataset import load_masked_training_dataset
 from pig_finserv.modeling.split import split_by_month
@@ -70,14 +71,24 @@ def ingest(
 
 
 @app.command()
-def report(parquet: Path, product: str, as_of_date: str, output_directory: Path) -> None:
+def report(
+    parquet: Path,
+    product: str,
+    as_of_date: str,
+    output_directory: Path,
+    external_context: bool = False,
+) -> None:
     """Render deterministic metrics, Markdown, and required complaint trend charts."""
 
     try:
         parsed_date = date.fromisoformat(as_of_date)
     except ValueError as exc:
         raise typer.BadParameter("as_of_date must use YYYY-MM-DD") from exc
-    result = ReportWorkflow(AnalyticsStore(parquet)).run(
+    result = ReportWorkflow(
+        AnalyticsStore(parquet),
+        source_retriever=CfpbNewsRetriever() if external_context else None,
+        commentary_client=GeminiCommentaryClient.from_environment() if external_context else None,
+    ).run(
         request=ReportRequest(product=product, as_of_date=parsed_date),
         output_directory=output_directory,
     )

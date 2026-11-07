@@ -3,9 +3,15 @@
 from __future__ import annotations
 
 from pig_finserv.analytics import ReportMetrics
+from pig_finserv.integrations import EvidenceSource, ReportCommentary
 
 
-def render_markdown(metrics: ReportMetrics) -> str:
+def render_markdown(
+    metrics: ReportMetrics,
+    *,
+    evidence_sources: tuple[EvidenceSource, ...] = (),
+    commentary: ReportCommentary | None = None,
+) -> str:
     """Render a source-free deterministic report before optional commentary is added."""
 
     change = "N/A" if metrics.volume_change is None else f"{metrics.volume_change:.1%}"
@@ -53,6 +59,19 @@ def render_markdown(metrics: ReportMetrics) -> str:
             "| Month | Complaints |",
             "| --- | ---: |",
             *[f"| {month.isoformat()} | {count} |" for month, count in metrics.monthly_counts],
+            "",
+            "## External context",
+            *(
+                [
+                    f"- [{source.source_id}] {source.publisher}, {source.publication_date}: "
+                    f"{source.title} ({source.url})"
+                    for source in evidence_sources
+                ]
+                or ["No vetted external context was available."]
+            ),
+            "",
+            "## Optional commentary",
+            *(_commentary_lines(commentary) if commentary else ["Commentary unavailable."]),
         ]
     ) + "\n"
 
@@ -84,3 +103,13 @@ def _table_with_share(
 
 def _share(count: int, denominator: int) -> str:
     return "N/A" if denominator == 0 else f"{count / denominator:.1%}"
+
+
+def _commentary_lines(commentary: ReportCommentary) -> list[str]:
+    return [
+        f"### {commentary.headline}",
+        *[f"- {observation}" for observation in commentary.observations],
+        *[f"- Context: {note}" for note in commentary.contextual_notes],
+        *[f"- Limitation: {limitation}" for limitation in commentary.limitations],
+        f"- Citations: {', '.join(commentary.citation_ids) or 'None'}",
+    ]
