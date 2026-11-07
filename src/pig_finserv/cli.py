@@ -21,7 +21,7 @@ from pig_finserv.data.mapping import (
     load_company_aliases,
     load_product_mappings,
 )
-from pig_finserv.domain import ReportRequest, TriageRequest, parse_request_id
+from pig_finserv.domain import ReportRequest, ReviewOutcome, TriageRequest, parse_request_id
 from pig_finserv.integrations import CfpbNewsRetriever, GeminiCommentaryClient
 from pig_finserv.modeling.artifact import ModelArtifactError, load_model_artifact
 from pig_finserv.modeling.dataset import load_masked_training_dataset
@@ -196,6 +196,30 @@ def validate_audit(audit_database: Path) -> None:
     """Verify the local audit hash chain and print its event count."""
 
     typer.echo(AuditStore(audit_database).verify_integrity())
+
+
+@app.command()
+def review(
+    audit_database: Path,
+    audit_id: str,
+    corrected_product: str,
+    outcome: ReviewOutcome,
+    reason_code: str,
+    corrected_issue: str | None = None,
+) -> None:
+    """Append an immutable human correction linked to an earlier triage event."""
+
+    try:
+        event = AuditStore(audit_database).append_review(
+            parent_audit_id=audit_id,
+            corrected_product=corrected_product,
+            corrected_issue=corrected_issue,
+            outcome=outcome,
+            reason_code=reason_code,
+        )
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(event.audit_id)
 
 
 def _masker_from_environment() -> PiiMasker:
