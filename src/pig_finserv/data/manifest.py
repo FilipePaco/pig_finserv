@@ -73,7 +73,7 @@ def build_snapshot_manifest(
     if source_row_count < len(validation.records):
         raise ValueError("source_row_count cannot be smaller than accepted_row_count")
 
-    snapshot_id = _snapshot_id(source_checksum=source_checksum, retrieved_at=retrieved_at)
+    snapshot_id = snapshot_id_for(source_checksum=source_checksum, retrieved_at=retrieved_at)
     received_dates = [record.date_received for record in validation.records]
     return SnapshotManifest(
         snapshot_id=snapshot_id,
@@ -103,6 +103,8 @@ def write_manifest(manifest: SnapshotManifest, path: Path) -> None:
     path.write_text(json.dumps(manifest.as_dict(), indent=2, sort_keys=True) + "\n")
 
 
-def _snapshot_id(*, source_checksum: str, retrieved_at: datetime) -> str:
+def snapshot_id_for(*, source_checksum: str, retrieved_at: datetime) -> str:
+    """Return the deterministic snapshot identifier used by records and manifests."""
+
     material = f"{source_checksum}:{retrieved_at.astimezone(UTC).isoformat()}"
     return f"cfpb-{hashlib.sha256(material.encode()).hexdigest()[:16]}"

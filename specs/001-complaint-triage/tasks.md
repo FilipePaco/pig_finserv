@@ -13,6 +13,7 @@
 
 - [x] Implement CFPB schema adapter, deterministic row validation, and deduplication.
 - [x] Implement snapshot manifest with acquisition, schema, quality, and checksum lineage.
+- [x] Integrate local CSV ingestion into curated Parquet and manifest outputs.
 - [x] Implement reviewed taxonomy/company mapping loaders with distinct mapped, unmapped, and ambiguous states.
 - [x] Add mapping-quality outputs to the curated snapshot workflow.
 - [x] Persist curated data as Parquet without narratives.
