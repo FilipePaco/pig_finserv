@@ -40,7 +40,7 @@
 ## Milestone 5 — Workflows and reporting
 
 - [ ] Implement explicit triage and report workflow state machines.
-- [ ] Implement chart assets/tables and structured report rendering.
+- [x] Implement chart assets/tables and deterministic Markdown report rendering.
 - [ ] Implement bounded CFPB/news source retrieval and constrained Gemini commentary with fallback behavior.
 - [ ] Implement optional Jev benchmark/second-opinion adapter behind the documented safety boundary.
 
