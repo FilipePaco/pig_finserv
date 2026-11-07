@@ -22,7 +22,11 @@ from pig_finserv.data.mapping import (
     load_product_mappings,
 )
 from pig_finserv.domain import ReportRequest, ReviewOutcome, TriageRequest, parse_request_id
-from pig_finserv.integrations import CfpbNewsRetriever, GeminiCommentaryClient
+from pig_finserv.integrations import (
+    CfpbNewsRetriever,
+    GeminiCommentaryClient,
+    ProviderUnavailableError,
+)
 from pig_finserv.modeling.artifact import ModelArtifactError, load_model_artifact
 from pig_finserv.modeling.dataset import load_masked_training_dataset
 from pig_finserv.modeling.split import split_by_month
@@ -205,6 +209,24 @@ def validate_audit(audit_database: Path) -> None:
     """Verify the local audit hash chain and print its event count."""
 
     typer.echo(AuditStore(audit_database).verify_integrity())
+
+
+@app.command("smoke-gemini")
+def smoke_gemini() -> None:
+    """Check optional Gemini JSON commentary with synthetic, non-sensitive input only."""
+
+    client = GeminiCommentaryClient.from_environment()
+    if client is None:
+        raise typer.BadParameter("GEMINI_API_KEY and GEMINI_MODEL must be set locally")
+    try:
+        commentary = client.generate_report_commentary(
+            safe_payload={"metric.current_count": 1, "sources": []},
+            metric_ids=frozenset({"metric.current_count"}),
+            source_ids=frozenset(),
+        )
+    except ProviderUnavailableError as exc:
+        raise typer.Exit(code=5) from exc
+    typer.echo(json.dumps({"status": "available", "headline": commentary.headline}))
 
 
 @app.command()

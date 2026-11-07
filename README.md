@@ -42,6 +42,13 @@ export GEMINI_MODEL="your-approved-model-id"
 Never commit source complaint CSVs, audit databases, model artifacts, provider keys,
 or populated `.env` files.
 
+After setting the optional Gemini variables, validate the provider using only
+synthetic non-sensitive values:
+
+```bash
+uv run pig-finserv smoke-gemini
+```
+
 ## Reproducible workflow
 
 All paths are local examples. Product mappings and company aliases must be reviewed

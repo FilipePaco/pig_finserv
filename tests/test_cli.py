@@ -36,3 +36,9 @@ def test_invalid_cli_request_id_creates_a_safe_audit_event(tmp_path: Path) -> No
     assert result.exit_code == 0
     assert response["action"] == "REJECTED_INVALID_REQUEST"
     assert response["audit_id"].startswith("triage_")
+
+
+def test_smoke_gemini_requires_local_configuration() -> None:
+    result = CliRunner().invoke(app, ["smoke-gemini"])
+
+    assert result.exit_code == 2
