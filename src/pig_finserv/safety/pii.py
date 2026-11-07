@@ -9,6 +9,7 @@ from collections import Counter
 from dataclasses import dataclass
 
 from pig_finserv.domain import MaskingStatus
+from pig_finserv.safety.entities import LocalEntityCandidateDetector
 
 
 class PiiMaskingError(ValueError):
@@ -52,6 +53,7 @@ class PiiMasker:
         if not fingerprint_salt:
             raise PiiMaskingError("fingerprint_salt must not be empty")
         self._fingerprint_salt = fingerprint_salt
+        self._entity_detector = LocalEntityCandidateDetector()
 
     def mask(self, narrative: str) -> MaskedText:
         """Return masked text and an HMAC fingerprint without retaining entity values."""
@@ -66,6 +68,7 @@ class PiiMasker:
         text = self._replace(text, self._account, "ACCOUNT_ID", counts)
         text = self._replace_card_numbers(text, counts)
         text = self._replace(text, self._phone, "PHONE", counts)
+        text = self._entity_detector.mask_candidates(text, counts)
         return MaskedText(
             text=text,
             input_fingerprint=hmac.new(
