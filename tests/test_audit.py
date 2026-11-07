@@ -47,3 +47,16 @@ def test_audit_store_detects_direct_payload_tampering(tmp_path: Path) -> None:
 
     with pytest.raises(AuditIntegrityError, match="hash mismatch"):
         store.verify_integrity()
+
+
+def test_audit_store_rejects_free_text_metadata(tmp_path: Path) -> None:
+    payload = AuditEventInput(
+        action=TriageAction.REJECTED_INVALID_REQUEST,
+        reason_code="consumer email is jane@example.com",
+        masking_status=MaskingStatus.NOT_RUN,
+        masked_entity_counts={},
+        request_id="not-a-uuid",
+    )
+
+    with pytest.raises(ValueError, match="request_id"):
+        AuditStore(tmp_path / "audit.sqlite").append(payload)

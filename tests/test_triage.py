@@ -1,5 +1,6 @@
 from datetime import date
 from pathlib import Path
+from unittest.mock import Mock
 
 from pig_finserv.audit import AuditStore
 from pig_finserv.domain import TriageAction, TriageRequest
@@ -59,3 +60,13 @@ def test_empty_narrative_creates_safe_review_event(tmp_path: Path) -> None:
 
     assert result.action is TriageAction.HUMAN_REVIEW_EMPTY_INPUT
     assert result.predicted_product is None
+
+
+def test_audit_store_outage_fails_closed_to_human_review(tmp_path: Path) -> None:
+    service = _service(tmp_path, calibrated=True)
+    service._audit_store.append = Mock(side_effect=OSError("disk unavailable"))  # noqa: SLF001
+
+    result = service.triage(TriageRequest(narrative="My card fee was charged twice."))
+
+    assert result.action is TriageAction.HUMAN_REVIEW_SYSTEM_FAILURE
+    assert result.audit_id.startswith("transient_")

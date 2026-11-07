@@ -13,6 +13,7 @@ def test_render_markdown_discloses_zero_denominator_and_limitations() -> None:
             top_issues=(("Billing dispute", 2),),
             top_companies=(("Example Bank", 2),),
             daily_counts=((date(2026, 10, 2), 0), (date(2026, 10, 31), 2)),
+            monthly_counts=((date(2026, 10, 1), 2),),
         )
     )
 

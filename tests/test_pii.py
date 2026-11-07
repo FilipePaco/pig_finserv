@@ -41,6 +41,18 @@ def test_masker_fingerprint_is_salted_and_stable_for_one_salt() -> None:
     assert first.input_fingerprint != other_salt.input_fingerprint
 
 
+def test_masker_replaces_high_signal_person_and_location_candidates_locally() -> None:
+    masked = PiiMasker(fingerprint_salt=b"test-salt").mask(
+        "My name is Jane Doe and I live in New York, NY. My card fee was unexpected."
+    )
+
+    assert "Jane Doe" not in masked.text
+    assert "New York, NY" not in masked.text
+    assert "card fee" in masked.text
+    assert masked.entity_counts["PERSON_CANDIDATE"] == 1
+    assert masked.entity_counts["LOCATION_CANDIDATE"] == 1
+
+
 def test_masker_does_not_mask_non_luhn_long_numbers_as_cards() -> None:
     masked = PiiMasker(fingerprint_salt=b"test-salt").mask("Reference 1234 5678 9012 3456")
 

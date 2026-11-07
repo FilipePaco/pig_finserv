@@ -9,6 +9,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import FeatureUnion, Pipeline
 
 from pig_finserv.modeling.split import LabeledNarrative
+from pig_finserv.safety.text import MaskedTextPreprocessor
 
 
 @dataclass
@@ -16,6 +17,7 @@ class TfidfLogisticProductClassifier:
     """Local baseline combining word and character features from masked text."""
 
     pipeline: Pipeline | None = None
+    preprocessor: MaskedTextPreprocessor = MaskedTextPreprocessor()
 
     def fit(self, examples: tuple[LabeledNarrative, ...]) -> TfidfLogisticProductClassifier:
         """Fit only on the supplied chronological fitting partition."""
@@ -55,7 +57,7 @@ class TfidfLogisticProductClassifier:
             ]
         )
         self.pipeline.fit(
-            [example.masked_text for example in examples],
+            [self.preprocessor.prepare(example.masked_text).text for example in examples],
             [example.product_canonical for example in examples],
         )
         return self
@@ -65,7 +67,8 @@ class TfidfLogisticProductClassifier:
 
         if self.pipeline is None:
             raise RuntimeError("classifier must be fitted before prediction")
-        probabilities = self.pipeline.predict_proba([masked_text])[0]
+        prepared = self.preprocessor.prepare(masked_text).text
+        probabilities = self.pipeline.predict_proba([prepared])[0]
         classes = self.pipeline.named_steps["classifier"].classes_
         return {
             label: float(probability)

@@ -21,6 +21,7 @@ class ReportMetrics:
     top_issues: tuple[tuple[str, int], ...]
     top_companies: tuple[tuple[str, int], ...]
     daily_counts: tuple[tuple[date, int], ...]
+    monthly_counts: tuple[tuple[date, int], ...]
 
     @property
     def volume_change(self) -> float | None:
@@ -89,7 +90,18 @@ class AnalyticsStore:
                 """,
                 [product, current_start, as_of_date],
             ).fetchall()
+            monthly_result = connection.execute(
+                """
+                SELECT date_trunc('month', date_received)::DATE, count(*)
+                FROM complaints
+                WHERE product_canonical = ? AND date_received BETWEEN ? AND ?
+                GROUP BY date_trunc('month', date_received)::DATE
+                """,
+                [product, _shift_months(_month_start(as_of_date), -11), as_of_date],
+            ).fetchall()
         daily_lookup = {received: count for received, count in daily_result}
+        monthly_lookup = {received: count for received, count in monthly_result}
+        months = tuple(_shift_months(_month_start(as_of_date), offset) for offset in range(-11, 1))
         return ReportMetrics(
             product=product,
             as_of_date=as_of_date,
@@ -101,6 +113,7 @@ class AnalyticsStore:
             top_issues=tuple(top_issues),
             top_companies=tuple(top_companies),
             daily_counts=tuple((value, int(daily_lookup.get(value, 0))) for value in dates),
+            monthly_counts=tuple((value, int(monthly_lookup.get(value, 0))) for value in months),
         )
 
     def _connection(self) -> duckdb.DuckDBPyConnection:
@@ -145,3 +158,12 @@ def _sql_path(path: Path) -> str:
     """Escape an explicit trusted local path for DuckDB's non-parameterizable view DDL."""
 
     return str(path.resolve()).replace("'", "''")
+
+
+def _month_start(value: date) -> date:
+    return value.replace(day=1)
+
+
+def _shift_months(value: date, delta: int) -> date:
+    ordinal = value.year * 12 + value.month - 1 + delta
+    return date(ordinal // 12, ordinal % 12 + 1, 1)

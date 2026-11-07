@@ -8,7 +8,7 @@ import sqlite3
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from pig_finserv.domain import MaskingStatus, TriageAction
 
@@ -59,6 +59,7 @@ class AuditStore:
     ) -> AuditEvent:
         """Append a safe event and atomically link it to the previous event hash."""
 
+        _validate_payload(payload)
         source_time = occurred_at or datetime.now(UTC)
         if source_time.tzinfo is None:
             raise ValueError("occurred_at must be timezone-aware")
@@ -154,6 +155,20 @@ def _canonical_payload(payload: AuditEventInput) -> str:
     values["masking_status"] = payload.masking_status.value
     values["masked_entity_counts"] = dict(sorted(payload.masked_entity_counts.items()))
     return json.dumps(values, sort_keys=True, separators=(",", ":"))
+
+
+def _validate_payload(payload: AuditEventInput) -> None:
+    """Reject caller-controlled metadata that could become unmasked free text."""
+
+    if payload.request_id is not None:
+        try:
+            UUID(payload.request_id)
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise ValueError("request_id must be an opaque UUID") from exc
+    if not payload.reason_code or not payload.reason_code.replace("_", "").isalnum():
+        raise ValueError("reason_code must be an allowlisted uppercase-style token")
+    if payload.reason_code != payload.reason_code.upper() or len(payload.reason_code) > 64:
+        raise ValueError("reason_code must be an allowlisted uppercase-style token")
 
 
 def _event_hash(
