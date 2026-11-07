@@ -1,10 +1,11 @@
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 
 from pig_finserv.audit import AuditEventInput, AuditIntegrityError, AuditStore
-from pig_finserv.domain import MaskingStatus, TriageAction
+from pig_finserv.domain import MaskingStatus, ReviewOutcome, TriageAction
 
 
 def _payload(action: TriageAction = TriageAction.AUTO_ROUTE) -> AuditEventInput:
@@ -60,3 +61,38 @@ def test_audit_store_rejects_free_text_metadata(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="request_id"):
         AuditStore(tmp_path / "audit.sqlite").append(payload)
+
+
+def test_sanitized_event_omits_fingerprint_and_caller_request_id(tmp_path: Path) -> None:
+    store = AuditStore(tmp_path / "audit.sqlite")
+    event = store.append(
+        replace(_payload(), request_id="81b900c1-b755-442c-a0b3-b0967009e412")
+    )
+
+    sanitized = store.sanitized_event(event.audit_id)
+
+    assert sanitized is not None
+    assert "input_fingerprint" not in sanitized["payload"]
+    assert "request_id" not in sanitized["payload"]
+
+
+def test_review_appends_correction_without_mutating_original_event(tmp_path: Path) -> None:
+    store = AuditStore(tmp_path / "audit.sqlite")
+    original = store.append(_payload())
+
+    correction = store.append_review(
+        parent_audit_id=original.audit_id,
+        corrected_product="Mortgage",
+        corrected_issue=None,
+        outcome=ReviewOutcome.CORRECTED,
+        reason_code="OPERATOR_CORRECTION",
+    )
+
+    original_view = store.sanitized_event(original.audit_id)
+    correction_view = store.sanitized_event(correction.audit_id)
+    assert original_view is not None
+    assert correction_view is not None
+    assert original_view["payload"]["review_correction"] is None
+    assert correction_view["payload"]["parent_audit_id"] == original.audit_id
+    assert correction_view["payload"]["review_correction"]["corrected_product"] == "Mortgage"
+    assert store.verify_integrity() == 2

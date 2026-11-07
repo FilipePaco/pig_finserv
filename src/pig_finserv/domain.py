@@ -37,6 +37,14 @@ class MappingStatus(StrEnum):
     AMBIGUOUS = "AMBIGUOUS"
 
 
+class ReviewOutcome(StrEnum):
+    """Allowlisted outcomes for an immutable human-review correction."""
+
+    CONFIRMED = "CONFIRMED"
+    CORRECTED = "CORRECTED"
+    UNSUPPORTED = "UNSUPPORTED"
+
+
 class ReportPeriodError(ValueError):
     """Raised when an as-of date cannot support the requested report windows."""
 

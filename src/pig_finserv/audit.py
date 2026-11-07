@@ -10,7 +10,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID, uuid4
 
-from pig_finserv.domain import MaskingStatus, TriageAction
+from pig_finserv.domain import MaskingStatus, ReviewOutcome, TriageAction
 
 
 class AuditIntegrityError(RuntimeError):
@@ -32,6 +32,8 @@ class AuditEventInput:
     threshold_policy_version: str | None = None
     predicted_product: str | None = None
     confidence: float | None = None
+    parent_audit_id: str | None = None
+    review_correction: dict[str, str | None] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -127,6 +129,64 @@ class AuditStore:
                 raise AuditIntegrityError(f"audit hash mismatch at event {audit_id}")
             previous_hash = stored_hash
         return len(rows)
+
+    def sanitized_event(self, audit_id: str) -> dict[str, object] | None:
+        """Return an operator-safe event view without fingerprints or raw text."""
+
+        with self._connection() as connection:
+            row = connection.execute(
+                """
+                SELECT audit_id, occurred_at, event_sequence, previous_event_hash,
+                       event_hash, payload_json
+                FROM audit_events WHERE audit_id = ?
+                """,
+                [audit_id],
+            ).fetchone()
+        if row is None:
+            return None
+        payload = json.loads(row[5])
+        payload.pop("input_fingerprint", None)
+        payload.pop("request_id", None)
+        return {
+            "audit_id": row[0],
+            "occurred_at": row[1],
+            "event_sequence": row[2],
+            "previous_event_hash": row[3],
+            "event_hash": row[4],
+            "payload": payload,
+        }
+
+    def append_review(
+        self,
+        *,
+        parent_audit_id: str,
+        corrected_product: str,
+        corrected_issue: str | None,
+        outcome: ReviewOutcome,
+        reason_code: str,
+    ) -> AuditEvent:
+        """Append a canonical human correction without overwriting the prediction."""
+
+        if not self.sanitized_event(parent_audit_id):
+            raise ValueError("parent audit event was not found")
+        if not corrected_product.strip():
+            raise ValueError("corrected_product must not be blank")
+        if corrected_issue is not None and not corrected_issue.strip():
+            raise ValueError("corrected_issue must be omitted or non-blank")
+        return self.append(
+            AuditEventInput(
+                action=TriageAction.HUMAN_REVIEW_LOW_CONFIDENCE,
+                reason_code=reason_code,
+                masking_status=MaskingStatus.NOT_REQUIRED,
+                masked_entity_counts={},
+                parent_audit_id=parent_audit_id,
+                review_correction={
+                    "corrected_product": corrected_product.strip(),
+                    "corrected_issue": corrected_issue.strip() if corrected_issue else None,
+                    "outcome": outcome.value,
+                },
+            )
+        )
 
     def _initialize(self) -> None:
         with self._connection() as connection:

@@ -23,29 +23,29 @@
 ## Milestone 3 — Safety and audit foundation
 
 - [x] Implement local structured-PII masking with typed placeholders and invariant tests.
-- [ ] Add a local NLP entity detector for person/location candidates and document measured limitations.
+- [x] Add a local NLP entity detector for person/location candidates and document measured limitations.
 - [x] Implement SQLite application-level append-only hash-chained audit events and integrity verification.
 - [x] Implement safe triage failure paths and masked-input audit integration.
-- [ ] Add safe metadata validation and adversarial prompt-injection fixtures.
+- [x] Add safe metadata validation and adversarial prompt-injection fixtures.
 
 ## Milestone 4 — Model training and evaluation
 
 - [x] Implement chronological month-level partitioning without split leakage.
-- [ ] Implement shared masked-text preprocessing for training and inference.
-- [ ] Train/evaluate TF-IDF plus Logistic Regression baseline with calibration and model card.
-- [ ] Train/evaluate one improved local candidate on the same locked holdout.
+- [x] Implement shared masked-text preprocessing for training and inference.
+- [x] Train/evaluate TF-IDF plus Logistic Regression baseline with calibration and model card.
+- [x] Train/evaluate one improved local candidate on the same locked holdout.
 - [x] Implement cost-aware threshold selection with a selective-precision and class-support gate.
-- [ ] Implement calibration diagnostics, selective-risk metrics, and artifact compatibility checks.
+- [x] Implement calibration diagnostics, selective-risk metrics, and artifact compatibility checks.
 
 ## Milestone 5 — Workflows and reporting
 
-- [ ] Implement explicit triage and report workflow state machines.
+- [x] Implement explicit triage and report workflow state machines.
 - [x] Implement chart assets/tables and deterministic Markdown report rendering.
-- [ ] Implement bounded CFPB/news source retrieval and constrained Gemini commentary with fallback behavior.
-- [ ] Implement optional Jev benchmark/second-opinion adapter behind the documented safety boundary.
+- [x] Implement bounded CFPB/news source retrieval and constrained Gemini commentary with fallback behavior.
+- [x] Implement optional Jev benchmark/second-opinion adapter behind the documented safety boundary.
 
 ## Milestone 6 — Deliverable verification
 
 - [ ] Complete live-data/provider evidence checks without committing data or keys.
-- [ ] Render and inspect the required architecture PDF.
-- [ ] Add reproducible setup/run instructions, sample outputs, and final verification evidence.
+- [x] Render and inspect the required architecture PDF.
+- [x] Add reproducible setup/run instructions and final verification evidence.

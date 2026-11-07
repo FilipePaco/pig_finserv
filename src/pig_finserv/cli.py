@@ -5,13 +5,15 @@ Commands are added incrementally as their service contracts are implemented.
 
 from __future__ import annotations
 
-from datetime import date
+import json
+import os
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import typer
 
 from pig_finserv.analytics import AnalyticsStore
-from pig_finserv.charts import render_report_charts
+from pig_finserv.audit import AuditStore
 from pig_finserv.data.ingestion import ingest_csv
 from pig_finserv.data.mapping import (
     CompanyAliasMapper,
@@ -19,7 +21,19 @@ from pig_finserv.data.mapping import (
     load_company_aliases,
     load_product_mappings,
 )
-from pig_finserv.reporting import render_markdown
+from pig_finserv.domain import ReportRequest, ReviewOutcome, TriageRequest, parse_request_id
+from pig_finserv.integrations import (
+    CfpbNewsRetriever,
+    GeminiCommentaryClient,
+    ProviderUnavailableError,
+)
+from pig_finserv.modeling.artifact import ModelArtifactError, load_model_artifact
+from pig_finserv.modeling.dataset import load_masked_training_dataset
+from pig_finserv.modeling.split import split_by_month
+from pig_finserv.modeling.training import train_and_store
+from pig_finserv.safety.pii import PiiMasker
+from pig_finserv.triage import TriageService
+from pig_finserv.workflows import ReportWorkflow
 
 app = typer.Typer(no_args_is_help=True, help="Pig FinServ complaint triage and insights.")
 
@@ -61,15 +75,186 @@ def ingest(
 
 
 @app.command()
-def report(parquet: Path, product: str, as_of_date: str, output_directory: Path) -> None:
+def report(
+    parquet: Path,
+    product: str,
+    as_of_date: str,
+    output_directory: Path,
+    external_context: bool = False,
+) -> None:
     """Render deterministic metrics, Markdown, and required complaint trend charts."""
 
     try:
         parsed_date = date.fromisoformat(as_of_date)
     except ValueError as exc:
         raise typer.BadParameter("as_of_date must use YYYY-MM-DD") from exc
-    metrics = AnalyticsStore(parquet).report_metrics(product=product, as_of_date=parsed_date)
-    output_directory.mkdir(parents=True, exist_ok=True)
-    (output_directory / "report.md").write_text(render_markdown(metrics))
-    render_report_charts(metrics, output_directory)
-    typer.echo(output_directory / "report.md")
+    result = ReportWorkflow(
+        AnalyticsStore(parquet),
+        source_retriever=CfpbNewsRetriever() if external_context else None,
+        commentary_client=GeminiCommentaryClient.from_environment() if external_context else None,
+    ).run(
+        request=ReportRequest(product=product, as_of_date=parsed_date),
+        output_directory=output_directory,
+    )
+    typer.echo(result.markdown_path)
+
+
+@app.command()
+def train(
+    source: Path,
+    product_mappings: Path,
+    snapshot_id: str,
+    taxonomy_version: str,
+    artifact_directory: Path,
+    source_revision: str = "unknown",
+    minimum_class_support: int = 50,
+) -> None:
+    """Train local candidates from a restricted CSV without storing narratives."""
+
+    dataset = load_masked_training_dataset(
+        source_path=source,
+        snapshot_id=snapshot_id,
+        taxonomy_mapper=TaxonomyMapper(load_product_mappings(product_mappings)),
+        masker=_masker_from_environment(),
+    )
+    result = train_and_store(
+        partitions=split_by_month(dataset.examples),
+        snapshot_id=snapshot_id,
+        taxonomy_version=taxonomy_version,
+        artifact_directory=artifact_directory,
+        source_revision=source_revision,
+        created_at_utc=datetime.now(UTC).isoformat(),
+        minimum_class_support=minimum_class_support,
+    )
+    typer.echo(result.artifact_directory)
+
+
+@app.command()
+def triage(
+    artifact_directory: Path,
+    audit_database: Path,
+    taxonomy_version: str,
+    request_id: str | None = None,
+) -> None:
+    """Read a narrative from stdin and return a sanitized local triage decision."""
+
+    audit_store = AuditStore(audit_database)
+    try:
+        parsed_request_id = parse_request_id(request_id)
+    except ValueError:
+        _echo_triage_result(TriageService.reject_invalid_request(audit_store))
+        return
+    try:
+        artifact = load_model_artifact(
+            directory=artifact_directory, taxonomy_version=taxonomy_version
+        )
+    except ModelArtifactError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    narrative = typer.get_text_stream("stdin").read()
+    service = TriageService(
+        masker=_masker_from_environment(),
+        classifier=artifact.estimator,
+        policy=artifact.threshold_policy,
+        class_calibration_support=artifact.model_card.calibration_class_support,
+        audit_store=audit_store,
+        probabilities_calibrated=True,
+        model_version=artifact.model_card.model_id,
+        taxonomy_version=artifact.model_card.taxonomy_version,
+    )
+    result = service.triage(TriageRequest(narrative=narrative, request_id=parsed_request_id))
+    _echo_triage_result(result)
+
+
+def _echo_triage_result(result) -> None:
+    typer.echo(
+        json.dumps(
+            {
+                "audit_id": result.audit_id,
+                "action": result.action.value,
+                "predicted_product": result.predicted_product,
+                "confidence": result.confidence,
+                "guardrail_status": result.guardrail_status.value,
+                "reason_code": result.reason_code,
+            },
+            sort_keys=True,
+        )
+    )
+
+
+@app.command("validate-model")
+def validate_model(artifact_directory: Path, taxonomy_version: str) -> None:
+    """Verify an existing local model artifact before it serves triage."""
+
+    try:
+        artifact = load_model_artifact(
+            directory=artifact_directory, taxonomy_version=taxonomy_version
+        )
+    except ModelArtifactError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(artifact.model_card.model_id)
+
+
+@app.command("inspect-audit")
+def inspect_audit(audit_database: Path, audit_id: str) -> None:
+    """Print a sanitized audit event without input fingerprints or caller IDs."""
+
+    event = AuditStore(audit_database).sanitized_event(audit_id)
+    if event is None:
+        raise typer.BadParameter("audit event was not found")
+    typer.echo(json.dumps(event, sort_keys=True))
+
+
+@app.command("validate-audit")
+def validate_audit(audit_database: Path) -> None:
+    """Verify the local audit hash chain and print its event count."""
+
+    typer.echo(AuditStore(audit_database).verify_integrity())
+
+
+@app.command("smoke-gemini")
+def smoke_gemini() -> None:
+    """Check optional Gemini JSON commentary with synthetic, non-sensitive input only."""
+
+    client = GeminiCommentaryClient.from_environment()
+    if client is None:
+        raise typer.BadParameter("GEMINI_API_KEY and GEMINI_MODEL must be set locally")
+    try:
+        commentary = client.generate_report_commentary(
+            safe_payload={"metric.current_count": 1, "sources": []},
+            metric_ids=frozenset({"metric.current_count"}),
+            source_ids=frozenset(),
+        )
+    except ProviderUnavailableError as exc:
+        raise typer.Exit(code=5) from exc
+    typer.echo(json.dumps({"status": "available", "headline": commentary.headline}))
+
+
+@app.command()
+def review(
+    audit_database: Path,
+    audit_id: str,
+    corrected_product: str,
+    outcome: ReviewOutcome,
+    reason_code: str,
+    corrected_issue: str | None = None,
+) -> None:
+    """Append an immutable human correction linked to an earlier triage event."""
+
+    try:
+        event = AuditStore(audit_database).append_review(
+            parent_audit_id=audit_id,
+            corrected_product=corrected_product,
+            corrected_issue=corrected_issue,
+            outcome=outcome,
+            reason_code=reason_code,
+        )
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(event.audit_id)
+
+
+def _masker_from_environment() -> PiiMasker:
+    salt = os.environ.get("PIG_FINSERV_FINGERPRINT_SALT")
+    if not salt:
+        raise typer.BadParameter("PIG_FINSERV_FINGERPRINT_SALT must be set locally")
+    return PiiMasker(fingerprint_salt=salt.encode())

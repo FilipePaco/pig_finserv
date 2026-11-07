@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import Protocol
 from uuid import uuid4
 
@@ -20,6 +21,14 @@ class TriageResult:
     confidence: float | None
     guardrail_status: MaskingStatus
     reason_code: str
+    workflow_state: TriageWorkflowState
+
+
+class TriageWorkflowState(StrEnum):
+    """Terminal states of the fixed local triage workflow."""
+
+    AUDITED = "AUDITED"
+    AUDIT_UNAVAILABLE = "AUDIT_UNAVAILABLE"
 
 
 class ProductClassifier(Protocol):
@@ -42,6 +51,7 @@ class TriageService:
         probabilities_calibrated: bool,
         model_version: str = "unknown",
         taxonomy_version: str = "unknown",
+        max_narrative_characters: int = 10_000,
     ) -> None:
         self._masker = masker
         self._classifier = classifier
@@ -51,6 +61,7 @@ class TriageService:
         self._probabilities_calibrated = probabilities_calibrated
         self._model_version = model_version
         self._taxonomy_version = taxonomy_version
+        self._max_narrative_characters = max_narrative_characters
 
     def triage(self, request: TriageRequest) -> TriageResult:
         """Return a safe route suggestion or human-review outcome with an audit ID."""
@@ -59,6 +70,13 @@ class TriageService:
             return self._audit_result(
                 action=TriageAction.HUMAN_REVIEW_EMPTY_INPUT,
                 reason_code="EMPTY_NARRATIVE",
+                masking_status=MaskingStatus.NOT_RUN,
+                request=request,
+            )
+        if len(request.normalized_narrative()) > self._max_narrative_characters:
+            return self._audit_result(
+                action=TriageAction.REJECTED_INVALID_REQUEST,
+                reason_code="NARRATIVE_LIMIT_EXCEEDED",
                 masking_status=MaskingStatus.NOT_RUN,
                 request=request,
             )
@@ -137,6 +155,7 @@ class TriageService:
                 confidence=None,
                 guardrail_status=masking_status,
                 reason_code="AUDIT_STORE_UNAVAILABLE",
+                workflow_state=TriageWorkflowState.AUDIT_UNAVAILABLE,
             )
         return TriageResult(
             audit_id=event.audit_id,
@@ -145,4 +164,38 @@ class TriageService:
             confidence=confidence,
             guardrail_status=masking_status,
             reason_code=reason_code,
+            workflow_state=TriageWorkflowState.AUDITED,
+        )
+
+    @staticmethod
+    def reject_invalid_request(audit_store: AuditStore) -> TriageResult:
+        """Audit a malformed envelope without retaining caller-controlled fields."""
+
+        try:
+            event = audit_store.append(
+                AuditEventInput(
+                    action=TriageAction.REJECTED_INVALID_REQUEST,
+                    reason_code="INVALID_REQUEST_ENVELOPE",
+                    masking_status=MaskingStatus.NOT_RUN,
+                    masked_entity_counts={},
+                )
+            )
+        except (OSError, RuntimeError, ValueError):
+            return TriageResult(
+                audit_id=f"transient_{uuid4()}",
+                action=TriageAction.HUMAN_REVIEW_SYSTEM_FAILURE,
+                predicted_product=None,
+                confidence=None,
+                guardrail_status=MaskingStatus.NOT_RUN,
+                reason_code="AUDIT_STORE_UNAVAILABLE",
+                workflow_state=TriageWorkflowState.AUDIT_UNAVAILABLE,
+            )
+        return TriageResult(
+            audit_id=event.audit_id,
+            action=TriageAction.REJECTED_INVALID_REQUEST,
+            predicted_product=None,
+            confidence=None,
+            guardrail_status=MaskingStatus.NOT_RUN,
+            reason_code="INVALID_REQUEST_ENVELOPE",
+            workflow_state=TriageWorkflowState.AUDITED,
         )

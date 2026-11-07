@@ -18,8 +18,12 @@ def test_render_markdown_discloses_zero_denominator_and_limitations() -> None:
     )
 
     assert "Change: N/A" in report
+    assert "Report ID: report-" in report
+    assert "Snapshot ID: unknown" in report
     assert "(N/A)" in report
     assert "not normalized by company customer base" in report
     assert "| 2026-10-02 | 0 |" in report
     assert "| Closed with explanation | 2 |" in report
     assert "| Billing dispute | 2 |" in report
+    assert "| 2026-10-01 | 2 |" in report
+    assert "| Billing dispute | 2 | 100.0% |" in report
