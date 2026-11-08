@@ -25,9 +25,8 @@ was committed.
 
 ## Deliberately external verification
 
-The Gemini and Jev keys are not present in the development environment used for this
-verification. No key, source complaint CSV, audit database, generated artifact, or
-provider response is committed. The opt-in `report --external-context` path has unit
-and workflow tests; a live provider smoke test must be run only after local
-environment variables are configured. The `pig-finserv smoke-gemini` command makes
-that check with synthetic non-sensitive metrics only.
+The opt-in `report --external-context` path has unit and workflow tests. A live
+Gemini smoke check was also completed locally through Docker Compose with
+`gemini-3.5-flash-lite`; the provider returned schema-valid commentary for synthetic,
+non-sensitive metrics only. No key, source complaint CSV, audit database, generated
+artifact, or provider response is committed. Jev remains disabled and was not called.

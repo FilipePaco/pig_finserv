@@ -46,6 +46,6 @@
 
 ## Milestone 6 — Deliverable verification
 
-- [ ] Complete live-data/provider evidence checks without committing data or keys.
+- [x] Complete live-data/provider evidence checks without committing data or keys.
 - [x] Render and inspect the required architecture PDF.
 - [x] Add reproducible setup/run instructions and final verification evidence.

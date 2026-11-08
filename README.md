@@ -30,6 +30,37 @@ uv run ruff check .
 uv run pytest
 ```
 
+## Docker
+
+Docker Compose runs the CLI without baking source data, model artifacts, audit
+databases, or credentials into the image. It reads the ignored local `.env`, mounts
+the ignored `local/` directory at `/app/local`, and overrides optional Gemini
+commentary to `gemini-3.5-flash-lite`, a cost-efficient text model.
+
+```bash
+docker compose build
+docker compose run --rm pig-finserv --help
+docker compose run --rm pig-finserv smoke-gemini
+```
+
+The first two commands require no data. `smoke-gemini` needs `GEMINI_API_KEY` in the
+local `.env`; it sends only synthetic metrics.
+The CFPB CSV and reviewed mappings belong in `local/` and stay out of Git:
+
+```bash
+docker compose run --rm pig-finserv ingest \
+  /app/local/cfpb.csv /app/local/data /app/local/product-mappings.csv \
+  /app/local/company-aliases.csv 2026.1 2026.1
+```
+
+For triage through standard input, disable pseudo-TTY allocation:
+
+```bash
+printf '%s' 'My card was charged twice.' | \
+  docker compose run --rm -T pig-finserv triage \
+  /app/local/artifacts/product-v1 /app/local/audit.sqlite 2026.1
+```
+
 Create an ignored `.env` or export these variables before `train` or `triage`:
 
 ```bash
