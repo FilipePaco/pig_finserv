@@ -1,0 +1,14 @@
+services:
+  pig-finserv:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      # Cost-efficient stable text model for optional report commentary.
+      GEMINI_MODEL: gemini-3.5-flash-lite
+    volumes:
+      - ./local:/app/local
+    stdin_open: true
+    tty: true
