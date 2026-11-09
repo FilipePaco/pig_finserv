@@ -142,6 +142,23 @@ class AnalyticsStore:
             raise ValueError("curated snapshot has no complaint dates")
         return earliest, latest
 
+    def canonical_products(self) -> tuple[str, ...]:
+        """Return the fixed, non-empty canonical products available for reporting."""
+
+        with self._connection() as connection:
+            rows = connection.execute(
+                """
+                SELECT DISTINCT product_canonical
+                FROM complaints
+                WHERE product_canonical IS NOT NULL AND product_canonical <> ''
+                ORDER BY product_canonical
+                """
+            ).fetchall()
+        products = tuple(str(row[0]) for row in rows)
+        if not products:
+            raise ValueError("curated snapshot has no canonical products")
+        return products
+
     def _connection(self) -> duckdb.DuckDBPyConnection:
         connection = duckdb.connect(":memory:")
         connection.execute(
