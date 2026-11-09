@@ -12,3 +12,33 @@ services:
       - ./local:/app/local
     stdin_open: true
     tty: true
+
+  ui:
+    profiles: ["ui"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      GEMINI_MODEL: gemini-3.5-flash-lite
+      PIG_FINSERV_MODEL_ARTIFACT_DIR: /app/local/demo/artifacts/product-v1
+      PIG_FINSERV_AUDIT_DATABASE: /app/local/demo/audit.sqlite
+      PIG_FINSERV_TAXONOMY_VERSION: 2026.1
+      PIG_FINSERV_ANALYTICS_PARQUET: /app/local/demo/data/cfpb-b2896163cad29d60.parquet
+      PIG_FINSERV_UI_OUTPUT_DIR: /app/local/demo/ui-reports
+    ports:
+      - "127.0.0.1:8501:8501"
+    volumes:
+      - ./local:/app/local
+    entrypoint:
+      - uv
+      - run
+      - --no-sync
+      - streamlit
+      - run
+      - src/pig_finserv/ui/app.py
+    command:
+      - --server.address=0.0.0.0
+      - --server.port=8501
+      - --server.headless=true

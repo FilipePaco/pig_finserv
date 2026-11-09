@@ -61,6 +61,44 @@ printf '%s' 'My card was charged twice.' | \
   /app/local/artifacts/product-v1 /app/local/audit.sqlite 2026.1
 ```
 
+### Streamlit demo
+
+The optional UI runs only on localhost and is a presentation layer over the same
+typed workflows as the CLI. Generate the ignored synthetic demo files once, then
+start it with either `uv` or Docker Compose:
+
+```bash
+uv sync --all-groups
+uv run python scripts/generate_demo_data.py local/demo
+demo_snapshot=$(uv run pig-finserv ingest \
+  local/demo/cfpb-demo.csv local/demo/data local/demo/product-mappings.csv \
+  local/demo/company-aliases.csv 2026.1 2026.1)
+PIG_FINSERV_FINGERPRINT_SALT=demo-local-salt uv run pig-finserv train \
+  local/demo/cfpb-demo.csv local/demo/product-mappings.csv "$demo_snapshot" 2026.1 \
+  local/demo/artifacts/product-v1 --minimum-class-support 2
+```
+
+For a local `uv` run, export the server-owned paths below and then run:
+
+```bash
+export PIG_FINSERV_FINGERPRINT_SALT=demo-local-salt
+export PIG_FINSERV_MODEL_ARTIFACT_DIR="$PWD/local/demo/artifacts/product-v1"
+export PIG_FINSERV_AUDIT_DATABASE="$PWD/local/demo/audit.sqlite"
+export PIG_FINSERV_TAXONOMY_VERSION=2026.1
+export PIG_FINSERV_ANALYTICS_PARQUET="$PWD/local/demo/data/$demo_snapshot.parquet"
+export PIG_FINSERV_UI_OUTPUT_DIR="$PWD/local/demo/ui-reports"
+uv run streamlit run src/pig_finserv/ui/app.py --server.address 127.0.0.1
+```
+
+The Docker profile supplies those container paths for the synthetic demo:
+
+```bash
+docker compose --profile ui up --build ui
+```
+
+Open `http://127.0.0.1:8501`. Use only synthetic examples such as `My card payment
+was charged twice.`; do not enter personal or production complaint data.
+
 Create an ignored `.env` or export these variables before `train` or `triage`:
 
 ```bash
