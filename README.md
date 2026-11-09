@@ -67,6 +67,10 @@ The optional UI runs only on localhost and is a presentation layer over the same
 typed workflows as the CLI. Generate the ignored synthetic demo files once, then
 start it with either `uv` or Docker Compose:
 
+The `Demo guide` page is an interview walkthrough. Northstar Bank, Harbor Financial,
+Summit Credit, every complaint, and every metric it presents are fictional synthetic
+data; they do not describe a real institution or CFPB records.
+
 ```bash
 uv sync --all-groups
 uv run python scripts/generate_demo_data.py local/demo
