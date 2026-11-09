@@ -25,8 +25,10 @@ def main() -> None:
         "Follow the displayed human-review action. Do not expose this unauthenticated app publicly."
     )
     services = UiServices(UiConfiguration.from_environment())
-    page = st.sidebar.radio("Workflow", ("Triage", "Insights", "Review", "Audit"))
-    if page == "Triage":
+    page = st.sidebar.radio("Workflow", ("Demo guide", "Triage", "Insights", "Review", "Audit"))
+    if page == "Demo guide":
+        _render_demo_guide()
+    elif page == "Triage":
         _render_triage(services)
     elif page == "Insights":
         _render_insights(services)
@@ -34,6 +36,48 @@ def main() -> None:
         _render_review(services)
     else:
         _render_audit(services)
+
+
+def _render_demo_guide() -> None:
+    """Present a concise, explicitly fictional interview walkthrough."""
+
+    st.header("Interview demo guide")
+    st.info(
+        "All companies, complaints, and metrics in this walkthrough are fictional "
+        "synthetic data. They do not describe a real bank or CFPB records."
+    )
+    st.subheader("1. Customer protection")
+    st.write(
+        "In Triage, submit the fictional narrative below. The local PII guard masks the "
+        "email-shaped value before model inference and audit persistence. The result is "
+        "a proposal, not an automatic customer outcome."
+    )
+    st.code(
+        "My credit card was charged twice for a subscription. Please contact me at "
+        "case@example.test.",
+        language=None,
+    )
+    st.subheader("2. Operations signal")
+    current, change, timely = st.columns(3)
+    current.metric("Current credit-card complaints", "120", "80 more than prior period")
+    change.metric("Volume change", "+200%", "120 current vs 40 previous")
+    timely.metric("Timely response rate", "71.7%", "86 of 120 known responses")
+    st.write(
+        "In Insights, choose **Credit card** and **2025-12-01**. The report shows "
+        "Duplicate charge as the leading issue and Northstar Bank with 70 complaints."
+    )
+    st.subheader("3. Responsible bank action")
+    st.write(
+        "An operations analyst can prioritize the billing-dispute queue, investigate "
+        "response capacity, and append a human correction when appropriate. The evidence "
+        "does **not** prove that Northstar caused the increase or is worse than peers: "
+        "complaint counts are not normalized by customer base and do not establish causality."
+    )
+    st.caption(
+        "Suggested closing: “The value is not an autonomous decision. It makes a safe "
+        "customer-routing proposal auditable and turns complaint operations into a "
+        "measurable, reviewable workflow.”"
+    )
 
 
 def _render_triage(services: UiServices) -> None:
@@ -117,7 +161,10 @@ def _render_report(result: ReportWorkflowResult) -> None:
         ("Monthly complaints", result.metrics.monthly_counts),
     ):
         _render_table(title, rows)
-    st.image(list(result.chart_paths), caption=("Daily complaint trend", "Monthly complaint trend"))
+    st.image(
+        list(result.chart_paths),
+        caption=["Daily complaint trend", "Monthly complaint trend"],
+    )
     if result.commentary:
         st.subheader("Optional commentary")
         st.write(result.commentary.headline)
