@@ -9,10 +9,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 COPY pyproject.toml uv.lock README.md ./
-RUN uv sync --locked --no-dev --group ml --group reporting --no-install-project
+RUN uv sync --locked --no-dev --group ml --group reporting --group ui --no-install-project
 
 COPY . ./
-RUN uv sync --locked --no-dev --group ml --group reporting
+RUN uv sync --locked --no-dev --group ml --group reporting --group ui
 
 ENTRYPOINT ["uv", "run", "--no-sync", "pig-finserv"]
 CMD ["--help"]
