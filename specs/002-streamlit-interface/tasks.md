@@ -22,7 +22,7 @@
 
 ## Milestone 4 — Delivery verification
 
-- [ ] Add Streamlit interaction/security regression tests.
+- [x] Add Streamlit interaction/security regression tests.
 - [x] Add a Docker Compose `ui` profile and README run instructions.
 - [x] Complete a local manual accessibility and safety verification with ignored
   synthetic fixtures.

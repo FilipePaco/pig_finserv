@@ -78,11 +78,15 @@ PIG_FINSERV_FINGERPRINT_SALT=demo-local-salt uv run pig-finserv train \
   local/demo/artifacts/product-v1 --minimum-class-support 2
 ```
 
-For a local `uv` run, export the six `PIG_FINSERV_*` values documented in
-[`specs/002-streamlit-interface/plan.md`](specs/002-streamlit-interface/plan.md)
-with paths below `local/demo/`, then run:
+For a local `uv` run, export the server-owned paths below and then run:
 
 ```bash
+export PIG_FINSERV_FINGERPRINT_SALT=demo-local-salt
+export PIG_FINSERV_MODEL_ARTIFACT_DIR="$PWD/local/demo/artifacts/product-v1"
+export PIG_FINSERV_AUDIT_DATABASE="$PWD/local/demo/audit.sqlite"
+export PIG_FINSERV_TAXONOMY_VERSION=2026.1
+export PIG_FINSERV_ANALYTICS_PARQUET="$PWD/local/demo/data/$demo_snapshot.parquet"
+export PIG_FINSERV_UI_OUTPUT_DIR="$PWD/local/demo/ui-reports"
 uv run streamlit run src/pig_finserv/ui/app.py --server.address 127.0.0.1
 ```
 
