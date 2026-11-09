@@ -46,3 +46,8 @@ The automated suite includes a headless Streamlit `AppTest` of the application s
 The Docker `ui` profile was built locally and verified to contain Streamlit. Synthetic
 CSV files, generated Parquet, model artifacts, SQLite audit data, UI report assets,
 and any populated environment file remain under ignored `local/` paths.
+
+The interview scenario was separately verified with 120 current-period and 40
+previous-period fictional credit-card complaints, a 71.7% timely-response rate, and
+the expected issue/company rankings. Streamlit hides internal error details in the
+browser; no tracebacks or local paths are part of the intended operator interface.
